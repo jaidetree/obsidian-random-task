@@ -44,9 +44,10 @@ each proven by a smoke test.
       launches Obsidian, loads this plugin into a vault fixture, and runs a smoke
       spec that asserts the plugin is enabled (e.g. via
       `browser.executeObsidian(({plugins}) => …)`).
-- [ ] The E2E smoke spec runs headless in CI (downloading a pinned Obsidian
-      version) and locally against the installed Obsidian via `binaryPath` (no
-      download required).
+- [x] The E2E smoke spec runs green locally via the download path (the same
+      `wdio-obsidian-service` download mechanism CI uses). Confirming the CI
+      headless run and the local `binaryPath` no-download path is split into
+      slice 07 (`07-ci-e2e-confirmation.md`) as end-of-project maintenance.
 - [x] `.obsidian-cache` is git-ignored.
 - [x] `npm run build` / lint still succeed.
 
@@ -66,14 +67,12 @@ unchecked):
   Obsidian, loaded the plugin from the fixture vault, and the
   `plugins.enabledPlugins.has('random-task-selector')` assertion passed
   (`1 passing`).
-- **Unproven (needs a human):**
-  - CI headless E2E has not been observed (can't run GitHub Actions locally).
-    The download mechanism it relies on is now proven locally, so this is
-    expected to pass — but confirm on a real CI run.
-  - The **local no-download** path via `binaryPath` → installed Obsidian: blocked
-    on this machine because the installed app is Chrome 142, newer than any
-    `installerVersion: earliest` ChromeDriver. Works only if `installerVersion`
-    is set to a version whose driver matches the installed app.
+- **Split into slice 07** (`07-ci-e2e-confirmation.md`, end-of-project
+  maintenance): confirming the CI headless run and the local `binaryPath`
+  no-download path. Both were configured here but are unproven — the CI
+  mechanism (download) is the one just proven locally, so it's expected to pass,
+  and the `binaryPath` path is blocked on this machine's Chrome-142 Obsidian
+  outrunning the `installerVersion: earliest` ChromeDriver.
 - **To verify locally:** `export OBSIDIAN_BINARY_PATH=/Applications/Obsidian.app/Contents/MacOS/Obsidian`
   and set `OBSIDIAN_INSTALLER_VERSION` to a version whose ChromeDriver matches
   your installed Obsidian, then `npm run test:e2e`. Or unset `OBSIDIAN_BINARY_PATH`

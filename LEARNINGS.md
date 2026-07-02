@@ -44,6 +44,7 @@
   (`OBSIDIAN_BINARY_PATH` unset → service fetches a self-consistent installer +
   ChromeDriver + app). Still unproven: CI headless run, and the local
   `binaryPath` no-download path (blocked by Chrome-142 vs driver DB — see Domain
-  Knowledge). Deferred to human review — see issue 01 review notes.
+  Knowledge). Both tracked in slice 07 (`07-ci-e2e-confirmation.md`) as
+  end-of-project maintenance.
 
 ## Consolidated Principles
