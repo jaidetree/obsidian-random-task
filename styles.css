@@ -1,8 +1,16 @@
-/*
+/* Emoji picker suggestion rows (settings glyph pickers). */
+.random-task-emoji-suggestion {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.random-task-emoji-suggestion-glyph {
+	font-size: 1.4em;
+	width: 1.6em;
+	text-align: center;
+}
 
-If your plugin does not need CSS, delete this file.
-
-*/
+.random-task-emoji-suggestion-name {
+	color: var(--text-muted);
+}
