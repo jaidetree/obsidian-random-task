@@ -18,5 +18,11 @@ main.js
 # obsidian
 data.json
 
+# wdio-obsidian-service downloads Obsidian versions here
+.obsidian-cache
+
+# Obsidian Insiders credentials for beta downloads (see wdio.conf.mts)
+.env
+
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store

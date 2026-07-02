@@ -13,6 +13,11 @@ export default defineConfig(
 		'package.json',
 		'package-lock.json',
 		'tsconfig.json',
+		'tsconfig.e2e.json',
+		'vitest.config.ts',
+		'wdio.conf.mts',
+		'test',
+		'.obsidian-cache',
 	]),
 	{
 		languageOptions: {
