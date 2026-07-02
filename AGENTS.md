@@ -276,7 +276,7 @@ Issues and PRDs live as local markdown files under `.scratch/<feature-slug>/`; n
 
 ### Triage labels
 
-Uses the five canonical triage roles verbatim (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded as the `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+Uses the five canonical triage roles verbatim (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) for readiness, plus the workflow states `in-progress` / `in-review` that `/slice` drives — all recorded as the `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
