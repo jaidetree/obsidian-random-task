@@ -21,14 +21,26 @@ import { rewriteLine } from './task-line';
 export type DrawRefusal = 'no-task-line' | 'already-active' | 'no-candidates';
 
 export type DrawResult =
-	| { ok: true; lineIndex: number; text: string }
+	| {
+			ok: true;
+			/** Document line index of the winning Candidate. */
+			lineIndex: number;
+			/** The winning line rewritten Active (tag + start glyph + `now`). */
+			text: string;
+			/** Document line index of every Candidate, in order — the hop path. */
+			candidateLines: number[];
+			/** The winner's position within `candidateLines`; the spin lands here. */
+			winnerOffset: number;
+	  }
 	| { ok: false; reason: DrawRefusal };
 
 /**
  * Decide the outcome of a Draw over `lines` with the cursor on `cursorLine`.
- * The winner (drawn via `pickOffset`) is marked Active: the active tag and the
- * start glyph + `now` are appended in canonical order, before any trailing
- * `^blockid`. Makes no decision to edit on any refusal.
+ * The offset is drawn once (via `pickOffset`) and drives both the winner and the
+ * animation's hop path, so the highlight lands on exactly the line committed.
+ * The winner is marked Active: the active tag and the start glyph + `now` are
+ * appended in canonical order, before any trailing `^blockid`. Makes no decision
+ * to edit on any refusal.
  */
 export function planDraw(
 	lines: string[],
@@ -48,13 +60,13 @@ export function planDraw(
 	const candidates = candidatesIn(checklistLines, settings);
 	if (candidates.length === 0) return { ok: false, reason: 'no-candidates' };
 
-	const winnerRelative =
-		candidates[selectWinner(candidates.length, pickOffset(candidates.length))]!;
-	const lineIndex = range.start + winnerRelative;
+	const winnerOffset = selectWinner(candidates.length, pickOffset(candidates.length));
+	const candidateLines = candidates.map((c) => range.start + c);
+	const lineIndex = candidateLines[winnerOffset]!;
 	const text = rewriteLine(
 		lines[lineIndex]!,
 		{ activeTag: 'add', start: { at: now } },
 		settings,
 	);
-	return { ok: true, lineIndex, text };
+	return { ok: true, lineIndex, text, candidateLines, winnerOffset };
 }

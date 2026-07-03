@@ -14,3 +14,27 @@
 .random-task-emoji-suggestion-name {
 	color: var(--text-muted);
 }
+
+/* Draw spin: the highlighted candidate line as the selection hops across the
+   checklist. Background tint keys the current hop; the landing hop bounces. */
+.rts-draw-hop {
+	background-color: var(--text-selection);
+	border-radius: var(--radius-s);
+	transition: background-color 80ms ease-out;
+}
+
+.rts-draw-bounce {
+	animation: rts-draw-bounce 220ms ease-out;
+}
+
+@keyframes rts-draw-bounce {
+	0% {
+		transform: translateX(0);
+	}
+	40% {
+		transform: translateX(var(--size-4-2));
+	}
+	100% {
+		transform: translateX(0);
+	}
+}

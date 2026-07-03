@@ -47,7 +47,7 @@ describe('planDraw — refusals', () => {
 describe('planDraw — winning edit', () => {
 	it('marks the drawn candidate active with tag + start glyph + datetime', () => {
 		const lines = ['- [ ] a', '- [ ] b'];
-		expect(planDraw(lines, 0, settings, pickFirst, NOW)).toEqual({
+		expect(planDraw(lines, 0, settings, pickFirst, NOW)).toMatchObject({
 			ok: true,
 			lineIndex: 0,
 			text: '- [ ] a #in-progress 🚀 2026-07-03T08:00',
@@ -64,7 +64,7 @@ describe('planDraw — winning edit', () => {
 			'- [ ] last',
 		];
 		const pickSecond = (n: number) => 1 % n;
-		expect(planDraw(lines, 0, settings, pickSecond, NOW)).toEqual({
+		expect(planDraw(lines, 0, settings, pickSecond, NOW)).toMatchObject({
 			ok: true,
 			lineIndex: 2,
 			text: '- [ ] last #in-progress 🚀 2026-07-03T08:00',
@@ -80,7 +80,7 @@ describe('planDraw — winning edit', () => {
 		];
 		// Cursor in the second checklist: winner must come from lines 2–3.
 		const result = planDraw(lines, 3, settings, () => 1, NOW);
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: true,
 			lineIndex: 3,
 			text: '- [ ] target-b #in-progress 🚀 2026-07-03T08:00',
@@ -89,10 +89,23 @@ describe('planDraw — winning edit', () => {
 
 	it('selects the sole candidate and preserves a trailing block ref', () => {
 		const lines = ['- [ ] only ^blk'];
-		expect(planDraw(lines, 0, settings, pickFirst, NOW)).toEqual({
+		expect(planDraw(lines, 0, settings, pickFirst, NOW)).toMatchObject({
 			ok: true,
 			lineIndex: 0,
 			text: '- [ ] only #in-progress 🚀 2026-07-03T08:00 ^blk',
 		});
+	});
+
+	it('surfaces the candidate hop path with the winner offset aligned to lineIndex', () => {
+		// The animation hops over `candidateLines`; a completed task between two
+		// candidates must be excluded from the path, and the drawn `winnerOffset`
+		// must index back to exactly the committed `lineIndex` — otherwise the
+		// highlight would land on a different task than the one written.
+		const lines = ['- [ ] first', '- [x] done ✅ 2026-07-03T07:00', '- [ ] last'];
+		const result = planDraw(lines, 0, settings, (n) => 1 % n, NOW);
+		if (!result.ok) throw new Error('expected a winning draw');
+		expect(result.candidateLines).toEqual([0, 2]);
+		expect(result.winnerOffset).toBe(1);
+		expect(result.candidateLines[result.winnerOffset]).toBe(result.lineIndex);
 	});
 });

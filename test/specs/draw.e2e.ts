@@ -7,9 +7,12 @@ const PLUGIN_ID = 'random-task-selector';
 // this fully-qualified id (`<plugin-id>:<command-id>`).
 const DRAW_COMMAND = `${PLUGIN_ID}:draw-random-task`;
 
-// End-to-end seam for slice 05 (The Draw). Drives a real Obsidian: places the
-// cursor in a checklist, runs the command, and asserts on the note read back —
-// exactly one candidate becomes tagged + stamped, and refusals make no edit.
+// End-to-end seam for the Draw (slices 05–06). Drives a real Obsidian: places
+// the cursor in a checklist, runs the command, and asserts on the committed end
+// state read back — exactly one candidate becomes tagged + stamped once the spin
+// lands, refusals make no edit, and editing the checklist mid-spin aborts with
+// no selection. Animation frames/feel are verified manually; the hop count and
+// deceleration are proven in the pure unit tests.
 //
 // The start-glyph datetime is the real wall clock, so assertions match its shape
 // (`🚀 YYYY-MM-DDTHH:mm`) rather than a fixed value; the exact format is proven
@@ -45,6 +48,22 @@ const moveCursorTo = (needle: string) =>
 		}
 		throw new Error(`line not found: ${search}`);
 	}, needle);
+
+// Edit the first line containing `needle` through the live CM editor, producing a
+// real in-checklist transaction — the surface the abort watches.
+const editLineContaining = (needle: string, insert: string) =>
+	browser.executeObsidian(({ app, obsidian }, [search, text]) => {
+		const view = app.workspace.getActiveViewOfType(obsidian.MarkdownView);
+		if (!view) throw new Error('no active markdown view');
+		const ed = view.editor;
+		for (let i = 0; i < ed.lineCount(); i++) {
+			if (ed.getLine(i).includes(search)) {
+				ed.replaceRange(text, { line: i, ch: ed.getLine(i).length });
+				return;
+			}
+		}
+		throw new Error(`line not found: ${search}`);
+	}, [needle, insert]);
 
 async function openInSource(content: string): Promise<void> {
 	await closeAll();
@@ -87,7 +106,8 @@ describe('Random Task Selector — the draw', function () {
 		await moveCursorTo('alpha');
 		await browser.executeObsidianCommand(DRAW_COMMAND);
 		await browser.waitUntil(async () => STAMP.test(await editorValue()), {
-			timeout: 5000,
+			// The spin decelerates over ~2s and commits only on landing.
+			timeout: 8000,
 			timeoutMsg: 'the draw wrote no start glyph',
 		});
 		const value = await editorValue();
@@ -105,7 +125,8 @@ describe('Random Task Selector — the draw', function () {
 		await moveCursorTo('target one');
 		await browser.executeObsidianCommand(DRAW_COMMAND);
 		await browser.waitUntil(async () => STAMP.test(await editorValue()), {
-			timeout: 5000,
+			// The spin decelerates over ~2s and commits only on landing.
+			timeout: 8000,
 			timeoutMsg: 'the draw wrote no start glyph',
 		});
 		const value = await editorValue();
@@ -143,5 +164,24 @@ describe('Random Task Selector — the draw', function () {
 		expect(value).not.toContain(TAG);
 		expect(value).not.toContain('🚀');
 		expect(value).toContain('- [x] done ✅ 2026-07-03T09:00');
+	});
+
+	it('aborts with no selection when the checklist is edited mid-spin', async function () {
+		await openInSource('- [ ] a\n- [ ] b\n- [ ] c\n');
+		await moveCursorTo('- [ ] a');
+		// Kick off the ~2s spin, then edit a checklist line while it is still
+		// spinning. The commit fires only on landing, so waiting past the full
+		// duration would (wrongly) let it write if the abort were broken.
+		await browser.executeObsidianCommand(DRAW_COMMAND);
+		await browser.pause(500);
+		await editLineContaining('- [ ] b', ' edited');
+		// Wait out the remaining spin plus margin: a working abort never commits,
+		// a broken one lands here.
+		await browser.pause(2500);
+		const value = await editorValue();
+		expect(value).not.toContain(TAG);
+		expect(value).not.toContain('🚀');
+		// The mid-spin edit is preserved; nothing was marked active.
+		expect(value).toContain('- [ ] b edited');
 	});
 });
