@@ -1,140 +1,213 @@
-# Obsidian Sample Plugin
+# Random Task Selector
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+An [Obsidian](https://obsidian.md) plugin that picks your next task for you.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Put your cursor in a Markdown checklist, run one command, and the plugin spins
+through the unchecked items and randomly lands on one — marking it active and
+stamping it with the time it was selected. When you later check the task off, it
+stamps the completion time too. No more staring at a list deciding what to do
+next.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+## Features
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+- **Draw a random task.** Scoped to the *checklist at your cursor* — a run of
+  task items at the same indentation. The draw is uniform (every candidate is
+  equally likely) and refuses to run if the checklist has no unchecked tasks or
+  already has one in progress.
+- **In-progress marking.** The winning task gets an active tag (`#in-progress`
+  by default) plus a start glyph (🚀) and a selected-at timestamp. A checklist
+  holds at most one active task at a time.
+- **Completion stamping (always on).** Checking off *any* hyphen task anywhere
+  in the vault appends a completed glyph (✅) and a completed-at timestamp. This
+  intentionally absorbs and replaces the Tasks plugin's done-date behavior, using
+  minute-precision local datetimes (`YYYY-MM-DDTHH:mm`) instead of date-only
+  stamps.
+- **Reactivation.** Un-checking a completed task refreshes its start timestamp
+  and returns it to the candidate pool.
+- **Configurable.** The active tag and both glyphs are editable in settings.
 
-## First time developing plugins?
+See [`CONTEXT.md`](CONTEXT.md) for the precise vocabulary (checklist, candidate,
+active, timestamps) the plugin is built on.
 
-Quick starting guide for new plugin devs:
+## Install
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### From the community plugin list
 
-## Releasing new releases
+*(Pending review.)* Once published: **Settings → Community plugins → Browse**,
+search for "Random Task Selector", install, and enable.
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### Manually
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+1. Download `main.js`, `manifest.json`, and `styles.css` from the
+   [latest release](../../releases).
+2. Copy them into `<your-vault>/.obsidian/plugins/random-task-selector/`.
+3. Reload Obsidian and enable the plugin under **Settings → Community plugins**.
 
-## Adding your plugin to the community plugin list
+## Usage
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+1. Open a note with a Markdown checklist:
 
-## How to use
+   ```markdown
+   - [ ] write the tests
+   - [ ] fix the flaky build
+   - [ ] update the changelog
+   ```
 
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+2. Put your cursor on any line of the checklist.
+3. Run **Draw a random task from this checklist** from the command palette
+   (⌘/Ctrl-P). Optionally bind it to a hotkey.
+4. The highlight spins and lands on the winner, which is marked active:
 
-## Manually installing the plugin
+   ```markdown
+   - [ ] write the tests
+   - [ ] fix the flaky build #in-progress 🚀 2026-07-03T14:22
+   - [ ] update the changelog
+   ```
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+5. Check it off when done — the completed timestamp is stamped automatically and
+   the active tag is removed:
 
-## Testing
+   ```markdown
+   - [x] fix the flaky build 🚀 2026-07-03T14:22 ✅ 2026-07-03T15:40
+   ```
 
-Two seams, no Obsidian mocks (see the PRD "Testing Decisions"):
+### Settings
 
-- **Unit (vitest)** — the pure core (`findChecklist`, `candidatesIn`,
-  `selectWinner`, `rewriteLine`, `classifyTransition`). Fast, exhaustive:
+| Setting         | Default        | Meaning                                        |
+| --------------- | -------------- | ---------------------------------------------- |
+| Active tag      | `#in-progress` | Tag marking the one active task in a checklist |
+| Start glyph     | 🚀             | Written with the selected-at datetime          |
+| Completed glyph | ✅             | Written with the completed-at datetime          |
 
-  ```
+## Contributing
+
+Contributions are welcome — bug reports, feature ideas, and pull requests.
+
+### Prerequisites
+
+- Node.js 18+ (`node --version`)
+- npm
+
+### Setup
+
+```bash
+git clone <your-fork-url>
+cd obsidian-random-task
+npm install
+```
+
+For a live-reload workflow, clone directly into a test vault's
+`.obsidian/plugins/random-task-selector/` folder.
+
+### Develop
+
+```bash
+npm run dev     # esbuild watch: recompiles src/ → main.js on save
+```
+
+Reload Obsidian (or use a hot-reload plugin) to pick up changes. The production
+build (type-checks first) is:
+
+```bash
+npm run build
+```
+
+### Lint
+
+```bash
+npm run lint    # ESLint + eslint-plugin-obsidianmd
+```
+
+CI lints every commit on every branch.
+
+### Architecture
+
+The codebase follows two decisions that any change should respect (full
+rationale in [`docs/adr/`](docs/adr/)):
+
+- **Pure core, thin adapter** (ADR-0002). All domain logic — finding the
+  checklist, filtering candidates, planning the draw, rewriting a line, stamping
+  a completion — lives as pure functions in `src/core/` with no Obsidian
+  imports. The `src/commands/`, `src/reconcile/`, and `src/animation/` layers are
+  thin adapters that read from Obsidian, call the core, and write back. New logic
+  belongs in the core so it can be unit-tested exhaustively.
+- **Observe and reconcile** (ADR-0001). Completion stamping detects check-offs
+  by observing document changes, not by intercepting checkbox clicks, so it works
+  regardless of how a task's state changed.
+
+```
+src/
+  main.ts          plugin lifecycle only (load, settings, register)
+  settings*.ts     settings interface, defaults, and settings tab
+  core/            pure domain logic (checklist, draw, task-line, datetime, transition)
+  commands/        Draw command adapter
+  reconcile/       completion-stamping editor extension
+  animation/       in-editor spin/highlight
+  ui/              modals (emoji picker)
+```
+
+### Tests
+
+Two seams, no Obsidian mocks:
+
+- **Unit (Vitest)** — the pure core. Fast and exhaustive:
+
+  ```bash
   npm test
   ```
 
 - **End-to-end (`wdio-obsidian-service`)** — the Obsidian adapter (change
   listener, command wiring, committed draw result, Notices) driven against a
-  real, sandboxed Obsidian:
+  real, sandboxed Obsidian. Build first: the service loads the bundled `main.js`,
+  not the TypeScript source.
 
-  ```
+  ```bash
   npm run build && npm run test:e2e
   ```
 
-  The build is required first because the service loads the bundled `main.js`,
-  not the TypeScript source.
+  By default the service downloads a pinned Obsidian into `.obsidian-cache`
+  (git-ignored, cached in CI). This is the supported path and what
+  `.github/workflows/test.yml` runs headlessly on Linux.
 
-### Where E2E gets its Obsidian
+  <details>
+  <summary>Optional: run E2E against your installed Obsidian (fragile)</summary>
 
-The test code is identical across environments; only the binary source differs.
-
-- **Download path (default, supported).** Leave `OBSIDIAN_BINARY_PATH` unset and
-  the service downloads a pinned Obsidian into `.obsidian-cache` (git-ignored,
-  cached in CI). This is what `.github/workflows/test.yml` runs — headless on
-  Linux under `xvfb` + `herbstluftwm` — and is the path we rely on.
-
-- **Local no-download `binaryPath` (optional dev convenience).** Point the
-  service at your already-installed Obsidian to skip the download:
-
-  ```
+  ```bash
   export OBSIDIAN_BINARY_PATH="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
   export OBSIDIAN_INSTALLER_VERSION="latest"   # must match the installed app
   npm run test:e2e
   ```
 
-  This path is fragile: `OBSIDIAN_INSTALLER_VERSION` selects the ChromeDriver,
-  which must match the installed app's Electron/Chrome version. Obsidian
-  auto-updates its app JS ahead of the launcher's ChromeDriver database, so a
-  freshly-updated install can have no matching driver and the session dies at
-  creation ("This version of ChromeDriver only supports Chrome version X").
-  There is no single version string guaranteed to work on every machine — if it
-  fails, unset `OBSIDIAN_BINARY_PATH` and use the download path.
+  `OBSIDIAN_INSTALLER_VERSION` selects the ChromeDriver, which must match the
+  installed app's Electron/Chrome version. Obsidian auto-updates its app JS ahead
+  of the launcher's ChromeDriver database, so a freshly-updated install can have
+  no matching driver and the session dies at creation. If it fails, unset
+  `OBSIDIAN_BINARY_PATH` and use the download path.
+  </details>
 
-## Improve code quality with eslint
+### Pull requests
 
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+- Keep changes focused; match the style of the code you touch.
+- Add or update tests — new domain logic goes in `src/core/` with unit tests.
+- Run `npm run lint`, `npm test`, and (for adapter changes) the E2E suite before
+  opening a PR.
 
-## Funding URL
+## Releasing
 
-You can include funding URLs where people who use your plugin can financially support it.
+Maintainer steps for cutting a release:
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+1. Update `minAppVersion` in `manifest.json` if it changed.
+2. Bump the version — `npm version patch | minor | major` — which updates
+   `manifest.json`, `package.json`, and adds the entry to `versions.json`.
+3. `npm run build` to produce `main.js`.
+4. Create a GitHub release whose tag is the exact version (no `v` prefix) and
+   attach `main.js`, `manifest.json`, and `styles.css` as binaries.
+5. For the first listing, submit a PR to
+   [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases)
+   per the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
 
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
-```
+## License
 
-If you have multiple URLs, you can also do:
-
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
-```
-
-## API Documentation
-
-See https://docs.obsidian.md
+[0-BSD](LICENSE).
+</content>
+</invoke>
