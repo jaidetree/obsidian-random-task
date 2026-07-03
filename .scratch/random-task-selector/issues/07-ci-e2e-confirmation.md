@@ -1,6 +1,6 @@
 # 07 — Confirm E2E across environments (CI + local binaryPath)
 
-Status: in-review
+Status: done
 
 ## Parent
 
@@ -39,22 +39,22 @@ the two boxes honestly, plus any workflow fixups a real run surfaces.
 ## Acceptance criteria
 
 - [x] A real GitHub Actions run of `test.yml` shows the E2E job passing headless
-      (download path), with `.obsidian-cache` restored/saved between runs.
-      — Run 28684384731 (push to `main`) went green: E2E job 1m22s, full suite
-      slices 01–06 under `xvfb`+`herbstluftwm`. Cache **save** proven (log:
-      "Cache not found … Cache saved with key obsidian-cache-Linux-<hash>"). The
-      cache **restore** (hit) is proven by the follow-up run 28685363133 (this
+      (download path), with `.obsidian-cache` restored/saved between runs. — Run
+      28684384731 (push to `main`) went green: E2E job 1m22s, full suite slices
+      01–06 under `xvfb`+`herbstluftwm`. Cache **save** proven (log: "Cache not
+      found … Cache saved with key obsidian-cache-Linux-<hash>"). The cache
+      **restore** (hit) is proven by the follow-up run 28685363133 (this
       commit's push, unchanged key): log shows "Cache hit for:
       obsidian-cache-Linux-bfbcbc4…ccd" (~256 MB restored), E2E green again.
       Both halves (save + restore between runs) now confirmed.
 - [x] The workflow is adjusted as needed so the run is reliable (no flakiness in
-      display/WM startup or Obsidian download).
-      — Run was clean; no change needed. Only annotation is the harmless Node-20
-      deprecation on `actions/cache@v4` (auto-forced to Node 24).
+      display/WM startup or Obsidian download). — Run was clean; no change
+      needed. Only annotation is the harmless Node-20 deprecation on
+      `actions/cache@v4` (auto-forced to Node 24).
 - [x] The local `binaryPath` no-download path is either shown to pass with a
       documented `OBSIDIAN_INSTALLER_VERSION` recipe, or explicitly demoted to
-      an optional path in the README with the download path as the default.
-      — **Demoted** in README ("Testing" section): download path is the default
+      an optional path in the README with the download path as the default. —
+      **Demoted** in README ("Testing" section): download path is the default
       and supported path; `binaryPath` is an optional dev convenience with the
       `OBSIDIAN_INSTALLER_VERSION=latest` recipe documented as best-effort and
       its Chrome/driver fragility called out.
