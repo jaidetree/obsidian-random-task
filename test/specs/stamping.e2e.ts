@@ -236,4 +236,20 @@ describe('Random Task Selector — completion stamping', function () {
 		await browser.pause(750);
 		expect(await obsidianPage.read(NOTE)).toBe(original);
 	});
+
+	it('leaves a background write to a closed note untouched (no spurious reset)', async function () {
+		// Regression guard: the snapshot-diff observer must fire only for a
+		// Reading-mode view, never for a background write to a file open in no
+		// view. Seed a snapshot with a completed line, close the note, then write
+		// an unchecked line to the same path out-of-band. Before the fix this was
+		// mis-read as an `[x]`→`[ ]` uncheck and the line was reset (tag + glyphs
+		// stripped) the moment it was written — corrupting the file.
+		await openWith('- [x] seed ✅ 2024-01-01\n', 'reading');
+		await closeAll();
+		const fresh = '- [ ] fresh #in-progress 🚀 2026-07-03T08:00\n';
+		await obsidianPage.write(NOTE, fresh);
+		// Let the observer (wrongly) fire on the closed-file write before asserting.
+		await browser.pause(750);
+		expect(await obsidianPage.read(NOTE)).toBe(fresh);
+	});
 });
