@@ -67,3 +67,63 @@ describe('classifyTransition — completion stamping', () => {
 		expect(classifyTransition(stamped, stamped, settings, NOW)).toBeNull();
 	});
 });
+
+describe('classifyTransition — uncheck reset', () => {
+	it('strips both glyphs, their datetimes, and the active tag on [x]→[ ]', () => {
+		expect(
+			classifyTransition(
+				'- [x] task #in-progress 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00',
+				'- [ ] task #in-progress 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00',
+				settings,
+				NOW,
+			),
+		).toBe('- [ ] task');
+	});
+
+	it('strips a start glyph left behind after the tag was manually removed', () => {
+		// A drawn task re-rolled by deleting #in-progress keeps its start glyph;
+		// unchecking must still reset it to a plain Candidate.
+		expect(
+			classifyTransition(
+				'- [x] task 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00',
+				'- [ ] task 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00',
+				settings,
+				NOW,
+			),
+		).toBe('- [ ] task');
+	});
+
+	it('resets to a plain Candidate — never leaving a second active marker', () => {
+		const reset = classifyTransition(
+			'- [x] task #in-progress ✅ 2026-07-03T09:00',
+			'- [ ] task #in-progress ✅ 2026-07-03T09:00',
+			settings,
+			NOW,
+		);
+		expect(reset).toBe('- [ ] task');
+		expect(reset).not.toContain('#in-progress');
+	});
+
+	it('preserves a trailing block reference through the reset', () => {
+		expect(
+			classifyTransition(
+				'- [x] task 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00 ^abc123',
+				'- [ ] task 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00 ^abc123',
+				settings,
+				NOW,
+			),
+		).toBe('- [ ] task ^abc123');
+	});
+
+	it('rewrites a no-glyph [x]→[ ] to a plain task (reconciler then makes no edit)', () => {
+		// rewriteLine returns the line unchanged apart from the checkbox the user
+		// already flipped, so `rewritten === nextLine` and no write is issued.
+		expect(classifyTransition('- [x] task', '- [ ] task', settings, NOW)).toBe(
+			'- [ ] task',
+		);
+	});
+
+	it('ignores non-hyphen syntaxes on uncheck', () => {
+		expect(classifyTransition('* [x] task', '* [ ] task', settings, NOW)).toBeNull();
+	});
+});

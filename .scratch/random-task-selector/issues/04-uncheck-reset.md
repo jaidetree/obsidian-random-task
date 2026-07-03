@@ -1,6 +1,6 @@
 # 04 — Uncheck reset
 
-Status: ready-for-agent
+Status: in-review
 
 ## Parent
 
@@ -20,15 +20,15 @@ tested at that seam.
 
 ## Acceptance criteria
 
-- [ ] Unchecking a completed task removes both the start glyph and the completed
+- [x] Unchecking a completed task removes both the start glyph and the completed
       glyph (and their datetimes).
-- [ ] The reset line carries no active tag and no glyphs (it is a plain
+- [x] The reset line carries no active tag and no glyphs (it is a plain
       Candidate).
-- [ ] Unchecking never produces a second active task in the checklist.
-- [ ] A `[x]` line with no glyphs or tag becomes `[ ]` with nothing else changed.
-- [ ] Pure-core unit tests cover the full-reset transition (glyphs + tag) and the
+- [x] Unchecking never produces a second active task in the checklist.
+- [x] A `[x]` line with no glyphs or tag becomes `[ ]` with nothing else changed.
+- [x] Pure-core unit tests cover the full-reset transition (glyphs + tag) and the
       no-glyph case.
-- [ ] An E2E test (`wdio-obsidian-service`) unchecks a completed task and asserts
+- [x] An E2E test (`wdio-obsidian-service`) unchecks a completed task and asserts
       the note read back has no completed glyph, no start glyph, and no active
       tag.
 

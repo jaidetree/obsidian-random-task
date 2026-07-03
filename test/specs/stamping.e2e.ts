@@ -195,6 +195,40 @@ describe('Random Task Selector — completion stamping', function () {
 		expect(countGlyph(value, '✅')).toBe(1);
 	});
 
+	it('fully resets a completed task when it is unchecked', async function () {
+		// A completed, previously-active task carrying both glyphs. Unchecking it
+		// must strip the active tag and both glyphs, leaving a plain Candidate.
+		await openWith(
+			'- [x] done task #in-progress 🚀 2026-07-03T08:00 ✅ 2026-07-03T09:00\n',
+			'source',
+		);
+		await browser.executeObsidian(({ app, obsidian }, search) => {
+			const view = app.workspace.getActiveViewOfType(obsidian.MarkdownView);
+			if (!view) throw new Error('no active markdown view');
+			const ed = view.editor;
+			for (let i = 0; i < ed.lineCount(); i++) {
+				const line = ed.getLine(i);
+				if (line.includes(search)) {
+					ed.setLine(i, line.replace('- [x]', '- [ ]'));
+					return;
+				}
+			}
+			throw new Error(`line not found: ${search}`);
+		}, 'done task');
+		// Gate on the reconciler's distinctive effect (glyph removal), not on the
+		// checkbox flip — `- [ ] done task` is a prefix of the pre-reset line, so
+		// waiting on it would resolve before the strip and race the assertions.
+		await browser.waitUntil(
+			async () => !(await editorValue()).includes('✅'),
+			{ timeout: 5000, timeoutMsg: 'unchecked task was not reset' },
+		);
+		const value = await editorValue();
+		expect(value).toContain('- [ ] done task');
+		expect(value).not.toContain('✅');
+		expect(value).not.toContain('🚀');
+		expect(value).not.toContain('#in-progress');
+	});
+
 	it('does not re-stamp pre-existing completed tasks when a note is only opened', async function () {
 		const original = '- [x] old task ✅ 2024-01-01\n- [ ] pending task\n';
 		await openWith(original, 'reading');

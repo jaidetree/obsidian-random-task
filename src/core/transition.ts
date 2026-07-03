@@ -4,11 +4,13 @@
  * one line, decide whether the reconciler should write anything, and if so
  * return the replacement line.
  *
- * This slice (03) handles only the completion transition `[ ]`→`[x]`:
- *   - append the completed glyph + `now`, and
- *   - strip the active tag if present.
- * The reactivation transition `[x]`→`[ ]` is added in slice 04; the signature
- * already accommodates it.
+ * Two transitions are recognized:
+ *   - Completion `[ ]`→`[x]`: append the completed glyph + `now`, and strip the
+ *     active tag if present.
+ *   - Reset `[x]`→`[ ]`: strip both the start and completed glyphs (with their
+ *     datetimes) and any active tag, leaving a plain unstamped Candidate. A
+ *     `[x]` line carrying no glyphs or tag becomes a plain `[ ]`, unchanged
+ *     apart from the checkbox (the reconciler then makes no write).
  *
  * `now` is injected (formatted via `formatLocalDateTime`) rather than read from
  * the clock here, keeping classification deterministic under test.
@@ -34,6 +36,18 @@ export function classifyTransition(
 		return rewriteLine(
 			nextLine,
 			{ activeTag: 'strip', completed: { at: now } },
+			settings,
+		);
+	}
+
+	// Reset: the actual `[x]`→`[ ]` transition only. Strip both glyphs and any
+	// active tag so the task returns to a plain Candidate — eligible to be drawn
+	// again and never a second active task. A line with nothing to strip
+	// rewrites to itself, so the reconciler makes no further edit.
+	if (prev.checked && !next.checked) {
+		return rewriteLine(
+			nextLine,
+			{ activeTag: 'strip', start: 'strip', completed: 'strip' },
 			settings,
 		);
 	}
