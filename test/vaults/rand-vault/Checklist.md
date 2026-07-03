@@ -28,3 +28,5 @@
 - [ ] Item should be completed by typing "x"
 - [ ] Item should not update timestamp 🏁 2026-07-03
 - [ ] Item should complete before block-ref ^1234
+- [x] Item should strip everything #in-progress 🚀 2026-07-03T12:01 🏁 2026-07-03T12:05
+- [x] Item should strip everything #no-touch #in-progress 🚀 2026-07-03T12:01 🏁 2026-07-03T12:05
