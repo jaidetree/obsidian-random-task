@@ -38,6 +38,17 @@
 
 ## Mistakes to Avoid
 
+- [2026-07-03] An E2E `browser.waitUntil` must gate on the **reconciler's
+  distinctive effect**, not on the checkbox flip the user just made. The
+  slice-04 reset test first waited on `.includes('- [ ] done task')`, but that
+  string is a *prefix substring* of the pre-reset line
+  (`- [ ] done task #in-progress 🚀 … ✅ …`), so it resolved immediately —
+  before the deferred (`queueMicrotask`) reconcile write — and the follow-up
+  `not.toContain('✅'/'🚀'/'#in-progress')` assertions raced the strip (flaky
+  green). Gate on the effect instead: `waitUntil(async () => !(await
+  editorValue()).includes('✅'))`. Mirror slice-03's `waitUntil(STAMP.test(...))`,
+  which keys on `/✅ …/` — true only *after* the reconciler acts.
+
 - [2026-07-03] In a CM6 `ViewPlugin.update`, `update.changes` maps **old→new**
   and its `length` is the *old* doc length. Mapping a *new*-doc position (e.g. a
   changed line's `from` in `update.state.doc`) with `update.changes.mapPos`
@@ -116,7 +127,25 @@
   across `iterateAllLeaves` to tell "open in an editor" (skip — editor path owns
   it) from Reading mode (handle via the snapshot path).
 
+- [2026-07-03] The two reconcile adapters are **transition-generic**: both the
+  CM6 editor extension and the Reading-mode snapshot path
+  (`reconcile-content.ts`) simply apply whatever line `classifyTransition`
+  returns (and skip when `rewritten === nextLine`). So slice-04's uncheck reset
+  (`[x]`→`[ ]`) needed **zero new adapter/write-path code** — the whole slice
+  was one branch in the pure core (ADR-0002 paying off). When adding a new
+  transition, extend `classifyTransition` and its unit tests; the adapters carry
+  it for free.
+
 ## Open Questions
+
+- [2026-07-03] Slice-03 E2E "strips the active tag but keeps the start glyph
+  when an active task is completed" **fails on a clean tree** (confirmed via
+  `git stash` + `npm run test:e2e`): completing `- [ ] focus #in-progress 🚀
+  <at>` yields `- [x] focus ✅ <now>` — the start glyph 🚀 is dropped, though the
+  pure `classifyTransition` unit test proves it should be preserved. So it's an
+  adapter/E2E-only discrepancy, not a core bug. Not touched during slice-04
+  (unrelated, and slice-03 is already `in-review`); flagged for slice-03 human
+  review.
 
 - [2026-07-02] [RESOLVED 2026-07-03] Does a Reading-mode checkbox click fire
   `vault.on('modify')`? **Yes.** The slice-03 E2E clicks a rendered
