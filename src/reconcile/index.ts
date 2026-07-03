@@ -53,9 +53,17 @@ export function registerReconciler(plugin: ReconcilerHost): void {
 		vault.on('modify', (file) => {
 			if (guard.writing || !(file instanceof TFile) || !isMarkdown(file))
 				return;
+			const open = openModes(plugin, file);
 			// Editor surfaces own their own files; stamping there goes through the
 			// buffer, and writing to disk underneath an open editor would race it.
-			if (isOpenInEditor(plugin, file)) return;
+			if (open.source) return;
+			// Only a file currently shown in a Reading-mode view can receive a
+			// checkbox click. A modify on a file open in no view is a background
+			// write (sync, another plugin, a test fixture swap) — reconciling it
+			// would diff a stale snapshot and mis-read an unrelated content change
+			// as a check-off/uncheck. Ignore it; the snapshot is refreshed on the
+			// next file-open/leaf-change seed.
+			if (!open.reading) return;
 			void reconcileReadingModify(plugin, guard, snapshots, file);
 		}),
 	);
@@ -100,18 +108,23 @@ function isMarkdown(file: TFile | null): file is TFile {
 	return file instanceof TFile && file.extension === 'md';
 }
 
-/** True if the file is open in a Source/Live Preview editor (not Reading mode). */
-function isOpenInEditor(plugin: Plugin, file: TFile): boolean {
-	let editing = false;
+/**
+ * Which surfaces the file is currently open in: `source` (Source/Live Preview,
+ * whose CM6 editor owns stamping) and `reading` (a Reading-mode view, the only
+ * surface where a checkbox click drives the snapshot-diff path). A file open in
+ * no markdown view yields `{ source: false, reading: false }`.
+ */
+function openModes(
+	plugin: Plugin,
+	file: TFile,
+): { source: boolean; reading: boolean } {
+	let source = false;
+	let reading = false;
 	plugin.app.workspace.iterateAllLeaves((leaf) => {
 		const view = leaf.view;
-		if (
-			view instanceof MarkdownView &&
-			view.file?.path === file.path &&
-			view.getMode() === 'source'
-		) {
-			editing = true;
-		}
+		if (!(view instanceof MarkdownView) || view.file?.path !== file.path) return;
+		if (view.getMode() === 'source') source = true;
+		else reading = true;
 	});
-	return editing;
+	return { source, reading };
 }
