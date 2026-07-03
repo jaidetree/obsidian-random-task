@@ -42,6 +42,17 @@ direct `[ ]`→`[x]` transition. This matches the Tasks plugin, which does not
 stamp in Source mode at all, and is accepted rather than broadening task
 recognition to the malformed intermediate.
 
+## Follow-up fix (2026-07-03, post-done)
+
+A latent bug in this slice's reconciler surfaced during slice-05 E2E work: the
+`vault.on('modify')` observer fired on **any** write to a file not open in a
+Source editor — including background writes to a *closed* note. Diffing such a
+write against a stale snapshot from a prior editing session could mis-read an
+unrelated content change as an `[x]`→`[ ]` uncheck and reset the line (tag +
+glyphs stripped) the moment it was written. Fixed by scoping the observer to
+files open in a Reading-mode view (the only surface where a checkbox click is
+possible), matching US19. Regression test added to `stamping.e2e.ts`.
+
 ## Acceptance criteria
 
 - [x] Checking off a `- [ ]` task in Source, Live Preview, and Reading mode all
