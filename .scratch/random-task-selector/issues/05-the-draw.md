@@ -46,10 +46,10 @@ stable command id so E2E can invoke it via
 - [x] The command refuses with a Notice when there are no candidates.
 - [x] Pure-core unit tests cover boundary detection, candidate filtering, uniform
       selection, and the line rewrite (including block-ref preservation).
-- [ ] An E2E test (`wdio-obsidian-service`) places the cursor in a checklist,
+- [x] An E2E test (`wdio-obsidian-service`) places the cursor in a checklist,
       runs the command, and asserts exactly one candidate in the note read back
       is now tagged + stamped.
-- [ ] An E2E test asserts the command makes no edit when the checklist already
+- [x] An E2E test asserts the command makes no edit when the checklist already
       has an active task and when it has no candidates.
 
 ## Blocked by

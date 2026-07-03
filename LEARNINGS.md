@@ -78,6 +78,21 @@
   `minAppVersion`, so `1.0.0` means an ancient/undownloadable installer — breaks
   the CI download path and produces a ChromeDriver far older than any real app.
 
+- [2026-07-03] The snapshot-diff Reading-mode observer fired on writes to
+  **closed** files and reset them. Chain: reusing one note path across E2E tests,
+  the observer held a stale snapshot from an earlier test's completed line; the
+  next test's whole-file fixture write (`obsidianPage.write` while the file was
+  detached) fired `modify`, diffed stale-vs-new, saw a same-index `[x]`→`[ ]`,
+  and ran the **reset** branch — stripping tag + both glyphs *before the editor
+  even opened the file*. The slice-03 test then toggled `- [ ] focus` (already
+  corrupted) and the "keep start glyph" assertion failed. The pure
+  `classifyTransition` was blameless; the bug was the observer's scope. Fix:
+  reconcile only files open in a Reading-mode view. Debugging lesson: when a pure
+  function is unit-proven but its adapter misbehaves, **capture the exact strings
+  the adapter feeds it** (a `globalThis.__dbg` push, read back via
+  `executeObsidian`) rather than theorizing — the captured `prevText`/`next`
+  showed the tag/glyph were already gone, pointing straight at an upstream write.
+
 ## Domain Knowledge
 
 - [2026-07-03] Completion stamping targets **Live Preview + Reading mode**;
@@ -141,6 +156,13 @@
   back-stamp every historical `[x]`. Use `MarkdownView.getMode() === 'source'`
   across `iterateAllLeaves` to tell "open in an editor" (skip — editor path owns
   it) from Reading mode (handle via the snapshot path).
+  **[CORRECTED 2026-07-03]** "not open in a source editor" is too broad — it also
+  matches a *closed* file. The snapshot-diff observer must reconcile **only files
+  actually open in a Reading-mode view** (`openModes()` → `{source, reading}`,
+  proceed on `reading && !source`). A background write to a closed note (sync,
+  another plugin, a test fixture swap) otherwise diffs a stale snapshot from a
+  prior editing session of that path and mis-reads an unrelated content swap as a
+  check-off/uncheck — see the reset-corruption entry in Mistakes.
 
 - [2026-07-03] The two reconcile adapters are **transition-generic**: both the
   CM6 editor extension and the Reading-mode snapshot path
@@ -170,14 +192,16 @@
 
 ## Open Questions
 
-- [2026-07-03] Slice-03 E2E "strips the active tag but keeps the start glyph
-  when an active task is completed" **fails on a clean tree** (confirmed via
-  `git stash` + `npm run test:e2e`): completing `- [ ] focus #in-progress 🚀
-  <at>` yields `- [x] focus ✅ <now>` — the start glyph 🚀 is dropped, though the
-  pure `classifyTransition` unit test proves it should be preserved. So it's an
-  adapter/E2E-only discrepancy, not a core bug. Not touched during slice-04
-  (unrelated, and slice-03 is already `in-review`); flagged for slice-03 human
-  review.
+- [2026-07-03] [RESOLVED 2026-07-03] Slice-03 E2E "strips the active tag but
+  keeps the start glyph when an active task is completed" **failed on a clean
+  tree**: completing `- [ ] focus #in-progress 🚀 <at>` yielded `- [x] focus ✅
+  <now>` — the start glyph 🚀 dropped, though the pure `classifyTransition` unit
+  test preserves it. Root cause was **not** an adapter discrepancy in the
+  stamping path but the Reading-mode observer over-firing on a background fixture
+  write to the closed, reused note — it reset the line to `- [ ] focus` before
+  the editor opened it (see the reset-corruption entry in Mistakes and the
+  `openModes` correction above). Fixed by scoping the observer to files open in a
+  Reading-mode view; full E2E suite now green (14/14).
 
 - [2026-07-02] [RESOLVED 2026-07-03] Does a Reading-mode checkbox click fire
   `vault.on('modify')`? **Yes.** The slice-03 E2E clicks a rendered
