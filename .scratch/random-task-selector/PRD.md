@@ -78,12 +78,12 @@ architectural decisions this PRD builds on.
 20. As a note-taker, I want tasks that already carry a completed glyph (including
     my legacy date-only stamps) to be left untouched, so that nothing is
     double-stamped.
-21. As a note-taker, I want to uncheck a completed task to mean "I'm working on
-    this again": the completed glyph is removed and the start glyph is refreshed
-    to now, so that its duration reflects the redo.
-22. As a note-taker, I want an unchecked (reactivated) task to become a plain
-    candidate — no `#in-progress` tag — so that it can be drawn again and never
-    silently creates a second active task in the list.
+21. As a note-taker, I want unchecking a completed task to fully reset it: both
+    the start and completed glyphs are removed, so that the line returns to a
+    clean, unstamped task.
+22. As a note-taker, I want an unchecked task to become a plain candidate — no
+    `#in-progress` tag and no glyphs — so that it can be drawn again fresh and
+    never silently creates a second active task in the list.
 23. As a note-taker, I want the start and completed glyphs written before any
     trailing block reference (`^blockid`), so that my block references keep
     working.
@@ -129,12 +129,14 @@ exposes at least:
   glyph added or stripped, in canonical order and inserted **before** any
   trailing `^blockid`.
 - `classifyTransition(prevLine, nextLine, settings)` → the Edit (if any) implied
-  by a line change: completion stamp + active-tag strip on `[ ]`→`[x]`; completed
-  glyph strip + start glyph refresh on `[x]`→`[ ]` when a start glyph is present.
+  by a line change: completion stamp + active-tag strip on `[ ]`→`[x]`; a full
+  reset on `[x]`→`[ ]` — strip both the start and completed glyphs and any active
+  tag, leaving a plain unstamped task.
 
 **Active is the tag.** The configurable tag (default `#in-progress`) is the sole
 definitive marker of the Active state. The start glyph is recorded data and may
-exist on a line without the tag (e.g. a reactivated Candidate).
+exist on a line without the tag (e.g. a drawn task whose `#in-progress` tag was
+manually removed to re-roll).
 
 **Line layout.** Canonical write order, left to right:
 `- [x] <description + existing tags> <active tag> <start glyph> <selected-at>
@@ -183,7 +185,8 @@ hyphen tasks only in v1 (not `* [ ]`, `+ [ ]`, or ordered `1. [ ]`).
 
 **Accepted default behaviors.** A Candidate checked off without ever being drawn
 receives a completed glyph but no start glyph (no computable duration).
-Re-drawing a reactivated Candidate overwrites its refreshed start glyph.
+Unchecking a completed task discards its prior start/completed stamps entirely
+rather than preserving them for duration history.
 
 **Housekeeping.** `manifest.json` is still the `sample-plugin` template; its
 `id`, `name`, and `description` must be set as part of this work. Two test
@@ -242,7 +245,7 @@ logic and manual observation.
   canonical ordering; insertion before a trailing `^blockid`; preservation of
   existing description and tags.
 - Transition classification: `[ ]`→`[x]` stamps completed + strips active tag;
-  `[x]`→`[ ]` strips completed glyph, refreshes start glyph, adds no tag;
+  `[x]`→`[ ]` strips both glyphs and any active tag, leaving a plain task;
   already-stamped line (glyph present, incl. legacy date-only) left unchanged;
   non-`- [ ]` syntaxes ignored.
 
@@ -254,8 +257,8 @@ logic and manual observation.
 - Running the Draw command tags + stamps exactly one candidate; refusals produce
   no edit (and, where observable, a Notice) for the no-checklist,
   already-active, and no-candidate cases.
-- Unchecking a completed task strips the completed glyph, refreshes the start
-  glyph, and leaves no active tag.
+- Unchecking a completed task strips both the completed and start glyphs and any
+  active tag, leaving a plain unstamped task.
 
 **Prior art.** The sibling `obsidian-kanban-base` plugin uses vitest for the unit
 seam; mirror its runner setup and co-located `*.test.ts` conventions. For the

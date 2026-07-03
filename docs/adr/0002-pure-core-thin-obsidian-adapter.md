@@ -19,7 +19,7 @@ no Obsidian app:
 - candidate filtering and the hop-count → winner selection,
 - line-token rewriting: adding/stripping `#in-progress`, start glyph, and
   completed glyph in canonical order, inserting before a trailing `^blockid`,
-- the completion, reactivation, and uncheck transition rules.
+- the completion and uncheck-reset transition rules.
 
 Everything Obsidian-specific — the change listener, CM6 decorations for the
 highlight animation, and `Notice` feedback — is a **thin adapter** that reads
