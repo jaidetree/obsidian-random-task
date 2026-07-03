@@ -24,15 +24,18 @@
 }
 
 .rts-draw-bounce {
-	animation: rts-draw-bounce 220ms ease-out;
+	animation: rts-draw-bounce 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes rts-draw-bounce {
 	0% {
 		transform: translateX(0);
 	}
-	40% {
-		transform: translateX(var(--size-4-2));
+	35% {
+		transform: translateX(var(--size-4-3));
+	}
+	70% {
+		transform: translateX(calc(-1 * var(--size-4-1)));
 	}
 	100% {
 		transform: translateX(0);

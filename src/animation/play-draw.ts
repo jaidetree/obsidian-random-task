@@ -18,6 +18,12 @@ import { setDrawHighlight } from './highlight';
 
 type WinningDraw = Extract<DrawResult, { ok: true }>;
 
+/** Hold on the winner while the landing bounce plays; must cover the CSS
+ * animation duration (`.rts-draw-bounce`) so it never ends abruptly. */
+const LANDING_SETTLE_MS = 360;
+/** Keep the winner highlighted just after the commit so the stamp is visible. */
+const POST_COMMIT_HOLD_MS = 160;
+
 const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -46,23 +52,39 @@ export async function playDraw(
 		view.dispatch({ effects: setDrawHighlight.of(null) });
 	};
 
-	for (let i = 0; i < hops.length; i++) {
-		const hop = hops[i]!;
+	const aborted = (): boolean => rangeText(view, start, end) !== baseline;
+
+	// Spin: move the plain highlight across the candidates. The landing hop is
+	// handled below so its bounce is not cut short by the commit/clear.
+	for (const hop of hops) {
 		const line = draw.candidateLines[hop.candidateIndex]!;
-		view.dispatch({
-			effects: setDrawHighlight.of({ line, bounce: i === hops.length - 1 }),
-		});
+		view.dispatch({ effects: setDrawHighlight.of({ line, bounce: false }) });
 		await sleep(hop.delayMs);
-		if (rangeText(view, start, end) !== baseline) {
+		if (aborted()) {
 			clear();
 			return 'aborted';
 		}
 	}
 
-	clear();
+	// Land: bounce on the winner and hold long enough for the CSS animation to
+	// play out fully (see `.rts-draw-bounce` in styles.css) before writing, so it
+	// never ends abruptly. A last edit during the hold still aborts.
+	view.dispatch({
+		effects: setDrawHighlight.of({ line: draw.lineIndex, bounce: true }),
+	});
+	await sleep(LANDING_SETTLE_MS);
+	if (aborted()) {
+		clear();
+		return 'aborted';
+	}
+
 	const winner = view.state.doc.line(draw.lineIndex + 1);
 	view.dispatch({
 		changes: { from: winner.from, to: winner.to, insert: draw.text },
 	});
+	// Keep the winner highlighted briefly so the committed stamp is visible under
+	// the highlight, then clear.
+	await sleep(POST_COMMIT_HOLD_MS);
+	clear();
 	return 'committed';
 }
