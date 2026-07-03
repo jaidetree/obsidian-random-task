@@ -1,6 +1,6 @@
 # 01 — Plugin foundation (prefactor)
 
-Status: in-review
+Status: done
 
 ## Parent
 
@@ -23,13 +23,13 @@ Stand up the two test seams (per the PRD's Testing Decisions):
    vault fixture, and an npm E2E script. Follow the service's sample layout for
    config and Obsidian-version handling, and ensure it runs headless in CI.
 
-   **Binary source, per environment.** The service drives its own Obsidian, not
-   the user's installed app. To avoid a per-machine download during local dev,
-   set `'wdio:obsidianOptions'.binaryPath` to the locally installed Obsidian when
-   present (e.g. via an env var), and **omit** it in CI so the launcher downloads
-   a pinned version (cached in `.obsidian-cache` between runs). The test code is
-   identical either way — only this config differs by environment. Add
-   `.obsidian-cache` to `.gitignore`.
+    **Binary source, per environment.** The service drives its own Obsidian, not
+    the user's installed app. To avoid a per-machine download during local dev,
+    set `'wdio:obsidianOptions'.binaryPath` to the locally installed Obsidian
+    when present (e.g. via an env var), and **omit** it in CI so the launcher
+    downloads a pinned version (cached in `.obsidian-cache` between runs). The
+    test code is identical either way — only this config differs by environment.
+    Add `.obsidian-cache` to `.gitignore`.
 
 No feature behavior ships in this slice — only the identity and the harnesses,
 each proven by a smoke test.
@@ -41,8 +41,8 @@ each proven by a smoke test.
 - [x] vitest is installed and runnable via an npm `test` script, with a trivial
       passing unit test.
 - [x] `wdio-obsidian-service` is installed and configured; an npm E2E script
-      launches Obsidian, loads this plugin into a vault fixture, and runs a smoke
-      spec that asserts the plugin is enabled (e.g. via
+      launches Obsidian, loads this plugin into a vault fixture, and runs a
+      smoke spec that asserts the plugin is enabled (e.g. via
       `browser.executeObsidian(({plugins}) => …)`).
 - [x] The E2E smoke spec runs green locally via the download path (the same
       `wdio-obsidian-service` download mechanism CI uses). Confirming the CI
@@ -73,7 +73,9 @@ unchecked):
   mechanism (download) is the one just proven locally, so it's expected to pass,
   and the `binaryPath` path is blocked on this machine's Chrome-142 Obsidian
   outrunning the `installerVersion: earliest` ChromeDriver.
-- **To verify locally:** `export OBSIDIAN_BINARY_PATH=/Applications/Obsidian.app/Contents/MacOS/Obsidian`
+- **To verify locally:**
+  `export OBSIDIAN_BINARY_PATH=/Applications/Obsidian.app/Contents/MacOS/Obsidian`
   and set `OBSIDIAN_INSTALLER_VERSION` to a version whose ChromeDriver matches
-  your installed Obsidian, then `npm run test:e2e`. Or unset `OBSIDIAN_BINARY_PATH`
-  to let the service download a matched installer + driver + app.
+  your installed Obsidian, then `npm run test:e2e`. Or unset
+  `OBSIDIAN_BINARY_PATH` to let the service download a matched installer +
+  driver + app.

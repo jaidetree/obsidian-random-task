@@ -27,11 +27,11 @@ ask.
    issue isn't found — report what failed.
 3. Set the issue's `Status:` line to `in-progress` (the `Status:` convention is
    documented in `docs/agents/issue-tracker.md`, named from `AGENTS.md`).
-4. Implement: read existing patterns near the change (keep `src/main.ts`
-   minimal — lifecycle only; delegate feature logic to focused modules per
-   `AGENTS.md`), then implement the slice as specified. Write/update tests at the
-   seams the issue names (vitest for the pure core; `wdio-obsidian-service` E2E
-   where called for).
+4. Implement: read existing patterns near the change (keep `src/main.ts` minimal
+   — lifecycle only; delegate feature logic to focused modules per `AGENTS.md`),
+   then implement the slice as specified. Write/update tests at the seams the
+   issue names (vitest for the pure core; `wdio-obsidian-service` E2E where
+   called for).
 5. Verify: `npm run build` (runs `tsc -noEmit` typecheck + esbuild) and
    `npm run lint`. Run `npm test` only if a `test` script exists. On failure,
    fix and **goto 4**.
@@ -42,3 +42,4 @@ ask.
    a human advances it past review.
 8. Run `/update-learnings` to capture what worked, what broke, and non-obvious
    domain facts. Be selective.
+9. After summarizing, report a list of manual testing steps for humans

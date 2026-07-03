@@ -13,6 +13,15 @@
   `vitest.config.ts`, `tsconfig.e2e.json`) must be added to eslint
   `globalIgnores`. A separate `tsconfig.e2e.json` (extends base, adds the wdio
   `types`) gives `tsc`/the editor correct types for those files.
+- [2026-07-02] Emoji-only picker (settings glyphs): model on the sibling
+  kanban-base `IconSuggestModal` but **drop the Lucide `getIconIds()` branch
+  entirely** — build `getItems()` from `unicode-emoji-json/data-by-emoji.json`
+  only. Don't include Lucide and filter at render; Lucide can't be serialized
+  inline into note text, so it must be unselectable, not just hidden.
+- [2026-07-02] Keep `main.ts → settings-tab` one-directional by typing the tab
+  against a small `SettingsHost extends Plugin` interface (`settings` +
+  `saveSettings()`) instead of importing the concrete plugin class — avoids the
+  circular import and keeps the adapter thin (ADR-0002).
 
 ## Mistakes to Avoid
 
@@ -34,6 +43,27 @@
   matching driver. Local no-download E2E requires `installerVersion` set to a
   version whose driver matches the installed app; otherwise unset `binaryPath`
   and let the service download a matched installer + driver + app.
+- [2026-07-02] Importing a JSON dependency (e.g.
+  `unicode-emoji-json/data-by-emoji.json`) needs `resolveJsonModule: true` in
+  `tsconfig.json`. esbuild bundles JSON natively, but `npm run build` runs
+  `tsc -noEmit` **first** and fails the JSON import without that flag — the
+  typecheck gates the bundle. (`allowSyntheticDefaultImports` was already set, so
+  the default-import form type-checks once JSON resolution is on.) Bundling the
+  full ~1900-entry emoji JSON into `main.js` was accepted despite AGENTS.md
+  "avoid large dependencies" because the PRD explicitly specifies the sibling's
+  approach.
+
+- [2026-07-03] wdio-obsidian-service persistence testing: the no-arg
+  `browser.reloadObsidian()` does **not** carry a live `saveData` write back
+  across the reboot (settings revert to their on-disk state), so it can't prove
+  "persists across restart". Assert persistence via a `saveData()` →
+  `loadData()` round-trip instead — `loadData()` re-reads `data.json` from disk,
+  which is the real persistence contract. Separately, `data.json` **survives
+  between `wdio` runs** (the sandbox/config state is reused), so E2E specs must
+  not assume a pristine disk and should restore defaults in an `after` hook to
+  avoid polluting later specs/runs. `installPlugins` re-copies `main.js` /
+  `manifest.json` on every boot but preserves an existing dest `data.json`
+  (it only overwrites when the *source* plugin dir ships its own data.json).
 
 ## Open Questions
 
