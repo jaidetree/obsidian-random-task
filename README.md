@@ -56,6 +56,54 @@ Quick starting guide for new plugin devs:
 
 - Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
 
+## Testing
+
+Two seams, no Obsidian mocks (see the PRD "Testing Decisions"):
+
+- **Unit (vitest)** — the pure core (`findChecklist`, `candidatesIn`,
+  `selectWinner`, `rewriteLine`, `classifyTransition`). Fast, exhaustive:
+
+  ```
+  npm test
+  ```
+
+- **End-to-end (`wdio-obsidian-service`)** — the Obsidian adapter (change
+  listener, command wiring, committed draw result, Notices) driven against a
+  real, sandboxed Obsidian:
+
+  ```
+  npm run build && npm run test:e2e
+  ```
+
+  The build is required first because the service loads the bundled `main.js`,
+  not the TypeScript source.
+
+### Where E2E gets its Obsidian
+
+The test code is identical across environments; only the binary source differs.
+
+- **Download path (default, supported).** Leave `OBSIDIAN_BINARY_PATH` unset and
+  the service downloads a pinned Obsidian into `.obsidian-cache` (git-ignored,
+  cached in CI). This is what `.github/workflows/test.yml` runs — headless on
+  Linux under `xvfb` + `herbstluftwm` — and is the path we rely on.
+
+- **Local no-download `binaryPath` (optional dev convenience).** Point the
+  service at your already-installed Obsidian to skip the download:
+
+  ```
+  export OBSIDIAN_BINARY_PATH="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+  export OBSIDIAN_INSTALLER_VERSION="latest"   # must match the installed app
+  npm run test:e2e
+  ```
+
+  This path is fragile: `OBSIDIAN_INSTALLER_VERSION` selects the ChromeDriver,
+  which must match the installed app's Electron/Chrome version. Obsidian
+  auto-updates its app JS ahead of the launcher's ChromeDriver database, so a
+  freshly-updated install can have no matching driver and the session dies at
+  creation ("This version of ChromeDriver only supports Chrome version X").
+  There is no single version string guaranteed to work on every machine — if it
+  fails, unset `OBSIDIAN_BINARY_PATH` and use the download path.
+
 ## Improve code quality with eslint
 
 - [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.

@@ -2,6 +2,16 @@
 
 ## Patterns That Work
 
+- [2026-07-03] A single green CI run **does not prove caching works** — only that
+  the download did. `actions/cache` on a fresh key logs *miss then save* ("Cache
+  not found …" → in the Post step "Cache saved with key …"); the **restore/hit**
+  half is only observable on a *second* run reusing the same key. So "cache
+  restored/saved between runs" needs two runs to close honestly: read the "Cache
+  Obsidian binaries" step log for the miss/save, and the *next* same-key run for
+  the hit. The key here hashes only `manifest.json`/`wdio.conf.mts`/
+  `package-lock.json`, so any push not touching those reuses it. Check via
+  `gh run view --job=<id> --log | grep -i cache`.
+
 - [2026-07-03] Verifying an E2E test is *discriminating* (that it fails when the
   logic under test is broken) requires a **rebuild** — wdio loads the bundled
   `main.js`, not the TS source. Sequence: patch source → `npm run build` → run
@@ -230,11 +240,23 @@
   `input.task-list-item-checkbox` in Reading mode and the completed glyph lands
   in the note read back from disk — so ADR-0001's observe-only stance holds for
   that surface and no per-surface (markdown post-processor) hook is needed.
-- [2026-07-02] Slice 01 E2E smoke spec passes green via the **download path**
-  (`OBSIDIAN_BINARY_PATH` unset → service fetches a self-consistent installer +
-  ChromeDriver + app). Still unproven: CI headless run, and the local
-  `binaryPath` no-download path (blocked by Chrome-142 vs driver DB — see Domain
-  Knowledge). Both tracked in slice 07 (`07-ci-e2e-confirmation.md`) as
-  end-of-project maintenance.
+- [2026-07-02] [RESOLVED 2026-07-03 — slice 07] Slice 01 E2E smoke spec passes
+  green via the **download path** (`OBSIDIAN_BINARY_PATH` unset → service fetches
+  a self-consistent installer + ChromeDriver + app). Was unproven: CI headless
+  run, and the local `binaryPath` no-download path (blocked by Chrome-142 vs
+  driver DB — see Domain Knowledge). **CI headless download path is now proven**:
+  GitHub Actions run 28684384731 (push to `main`, full E2E suite slices 01–06)
+  went green in 1m22s under `xvfb` + `herbstluftwm`. The `.obsidian-cache` step
+  logged a *miss then save* ("Cache not found … Cache saved with key
+  obsidian-cache-Linux-<hash>") — so cache **save** is proven; the **restore**
+  half needs a second run reusing the same key (the key hashes only
+  `manifest.json`/`wdio.conf.mts`/`package-lock.json`, so any later push that
+  doesn't touch those hits it). The local `binaryPath` path was **not** shown to
+  pass (still machine-dependent on the installed app's Chrome vs the driver DB);
+  per slice 07's either/or it was **demoted** in the README to an optional dev
+  convenience with the download path as the supported default, documenting the
+  `OBSIDIAN_INSTALLER_VERSION=latest` recipe as best-effort. The Node-20
+  deprecation annotation on `actions/cache@v4` is harmless (auto-forced to Node
+  24); no workflow change was needed.
 
 ## Consolidated Principles

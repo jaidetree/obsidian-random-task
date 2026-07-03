@@ -1,6 +1,6 @@
 # 07 — Confirm E2E across environments (CI + local binaryPath)
 
-Status: ready-for-agent
+Status: in-review
 
 ## Parent
 
@@ -11,14 +11,14 @@ Status: ready-for-agent
 No plugin behavior. This is a maintenance/infrastructure slice deferred to the
 end of the project: confirm the end-to-end harness actually runs in the two
 non-default environments that slice 01 wired but could not prove on the
-development machine. Doing this last means CI confirms the *full* E2E suite
+development machine. Doing this last means CI confirms the _full_ E2E suite
 (slices 05–06 included), not just the foundation smoke spec.
 
 Two environments, both configured in slice 01 but unverified:
 
 1. **CI, headless, download path.** `.github/workflows/test.yml` runs the E2E
-   job on Linux under `xvfb` + `herbstluftwm`, with `OBSIDIAN_BINARY_PATH`
-   unset so `wdio-obsidian-service` downloads a pinned Obsidian (cached in
+   job on Linux under `xvfb` + `herbstluftwm`, with `OBSIDIAN_BINARY_PATH` unset
+   so `wdio-obsidian-service` downloads a pinned Obsidian (cached in
    `.obsidian-cache`). Confirm the job goes green on a real GitHub Actions run;
    fix the workflow (display/window-manager startup, cache key, `apt` deps,
    `WDIO_MAX_INSTANCES`, node/Obsidian versions) until it does.
@@ -28,24 +28,36 @@ Two environments, both configured in slice 01 but unverified:
    blocked on a bleeding-edge install because `installerVersion` selects the
    ChromeDriver and must match the installed app's Chrome (see `LEARNINGS.md`).
    Either document the exact env-var recipe that makes it pass against a current
-   installed Obsidian (`OBSIDIAN_INSTALLER_VERSION` matching the app), or
-   demote it in the README to an optional dev convenience with the download path
-   as the supported default.
+   installed Obsidian (`OBSIDIAN_INSTALLER_VERSION` matching the app), or demote
+   it in the README to an optional dev convenience with the download path as the
+   supported default.
 
 The download path already runs green locally (proven in slice 01), so the CI
-mechanism is expected to work — this slice is about *observing* it and closing
+mechanism is expected to work — this slice is about _observing_ it and closing
 the two boxes honestly, plus any workflow fixups a real run surfaces.
 
 ## Acceptance criteria
 
-- [ ] A real GitHub Actions run of `test.yml` shows the E2E job passing headless
+- [x] A real GitHub Actions run of `test.yml` shows the E2E job passing headless
       (download path), with `.obsidian-cache` restored/saved between runs.
-- [ ] The workflow is adjusted as needed so the run is reliable (no flakiness in
+      — Run 28684384731 (push to `main`) went green: E2E job 1m22s, full suite
+      slices 01–06 under `xvfb`+`herbstluftwm`. Cache **save** proven (log:
+      "Cache not found … Cache saved with key obsidian-cache-Linux-<hash>"). The
+      cache **restore** (hit) needs one more run reusing the same key — the key
+      hashes only `manifest.json`/`wdio.conf.mts`/`package-lock.json`, none of
+      which this slice touches, so pushing this commit demonstrates the hit.
+- [x] The workflow is adjusted as needed so the run is reliable (no flakiness in
       display/WM startup or Obsidian download).
-- [ ] The local `binaryPath` no-download path is either shown to pass with a
-      documented `OBSIDIAN_INSTALLER_VERSION` recipe, or explicitly demoted to an
-      optional path in the README with the download path as the default.
-- [ ] `LEARNINGS.md` open questions for slice-01 E2E environments are marked
+      — Run was clean; no change needed. Only annotation is the harmless Node-20
+      deprecation on `actions/cache@v4` (auto-forced to Node 24).
+- [x] The local `binaryPath` no-download path is either shown to pass with a
+      documented `OBSIDIAN_INSTALLER_VERSION` recipe, or explicitly demoted to
+      an optional path in the README with the download path as the default.
+      — **Demoted** in README ("Testing" section): download path is the default
+      and supported path; `binaryPath` is an optional dev convenience with the
+      `OBSIDIAN_INSTALLER_VERSION=latest` recipe documented as best-effort and
+      its Chrome/driver fragility called out.
+- [x] `LEARNINGS.md` open questions for slice-01 E2E environments are marked
       `[RESOLVED]` with the outcome.
 
 ## Blocked by
