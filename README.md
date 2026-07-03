@@ -1,5 +1,7 @@
 # Random Task Selector
 
+<img alt="Recording of using the random todo item selector" src="./docs/assets/preview.gif" />
+
 An [Obsidian](https://obsidian.md) plugin that picks your next task for you.
 
 Put your cursor in a Markdown checklist, run one command, and the plugin spins
@@ -10,18 +12,18 @@ next.
 
 ## Features
 
-- **Draw a random task.** Scoped to the *checklist at your cursor* — a run of
+- **Draw a random task.** Scoped to the _checklist at your cursor_ — a run of
   task items at the same indentation. The draw is uniform (every candidate is
   equally likely) and refuses to run if the checklist has no unchecked tasks or
   already has one in progress.
 - **In-progress marking.** The winning task gets an active tag (`#in-progress`
   by default) plus a start glyph (🚀) and a selected-at timestamp. A checklist
   holds at most one active task at a time.
-- **Completion stamping (always on).** Checking off *any* hyphen task anywhere
+- **Completion stamping (always on).** Checking off _any_ hyphen task anywhere
   in the vault appends a completed glyph (✅) and a completed-at timestamp. This
-  intentionally absorbs and replaces the Tasks plugin's done-date behavior, using
-  minute-precision local datetimes (`YYYY-MM-DDTHH:mm`) instead of date-only
-  stamps.
+  intentionally absorbs and replaces the Tasks plugin's done-date behavior,
+  using minute-precision local datetimes (`YYYY-MM-DDTHH:mm`) instead of
+  date-only stamps.
 - **Reactivation.** Un-checking a completed task refreshes its start timestamp
   and returns it to the candidate pool.
 - **Configurable.** The active tag and both glyphs are editable in settings.
@@ -33,7 +35,7 @@ active, timestamps) the plugin is built on.
 
 ### From the community plugin list
 
-*(Pending review.)* Once published: **Settings → Community plugins → Browse**,
+_(Pending review.)_ Once published: **Settings → Community plugins → Browse**,
 search for "Random Task Selector", install, and enable.
 
 ### Manually
@@ -47,29 +49,29 @@ search for "Random Task Selector", install, and enable.
 
 1. Open a note with a Markdown checklist:
 
-   ```markdown
-   - [ ] write the tests
-   - [ ] fix the flaky build
-   - [ ] update the changelog
-   ```
+    ```markdown
+    - [ ] write the tests
+    - [ ] fix the flaky build
+    - [ ] update the changelog
+    ```
 
 2. Put your cursor on any line of the checklist.
-3. Run **Pick for me** from the command palette
-   (⌘/Ctrl-P). Optionally bind it to a hotkey.
+3. Run **Pick for me** from the command palette (⌘/Ctrl-P). Optionally bind it
+   to a hotkey.
 4. The highlight spins and lands on the winner, which is marked active:
 
-   ```markdown
-   - [ ] write the tests
-   - [ ] fix the flaky build #in-progress 🚀 2026-07-03T14:22
-   - [ ] update the changelog
-   ```
+    ```markdown
+    - [ ] write the tests
+    - [ ] fix the flaky build #in-progress 🚀 2026-07-03T14:22
+    - [ ] update the changelog
+    ```
 
 5. Check it off when done — the completed timestamp is stamped automatically and
    the active tag is removed:
 
-   ```markdown
-   - [x] fix the flaky build 🚀 2026-07-03T14:22 ✅ 2026-07-03T15:40
-   ```
+    ```markdown
+    - [x] fix the flaky build 🚀 2026-07-03T14:22 ✅ 2026-07-03T15:40
+    ```
 
 ### Settings
 
@@ -77,7 +79,7 @@ search for "Random Task Selector", install, and enable.
 | --------------- | -------------- | ---------------------------------------------- |
 | Active tag      | `#in-progress` | Tag marking the one active task in a checklist |
 | Start glyph     | 🚀             | Written with the selected-at datetime          |
-| Completed glyph | ✅             | Written with the completed-at datetime          |
+| Completed glyph | ✅             | Written with the completed-at datetime         |
 
 ## Contributing
 
@@ -128,12 +130,12 @@ rationale in [`docs/adr/`](docs/adr/)):
 - **Pure core, thin adapter** (ADR-0002). All domain logic — finding the
   checklist, filtering candidates, planning the draw, rewriting a line, stamping
   a completion — lives as pure functions in `src/core/` with no Obsidian
-  imports. The `src/commands/`, `src/reconcile/`, and `src/animation/` layers are
-  thin adapters that read from Obsidian, call the core, and write back. New logic
-  belongs in the core so it can be unit-tested exhaustively.
+  imports. The `src/commands/`, `src/reconcile/`, and `src/animation/` layers
+  are thin adapters that read from Obsidian, call the core, and write back. New
+  logic belongs in the core so it can be unit-tested exhaustively.
 - **Observe and reconcile** (ADR-0001). Completion stamping detects check-offs
-  by observing document changes, not by intercepting checkbox clicks, so it works
-  regardless of how a task's state changed.
+  by observing document changes, not by intercepting checkbox clicks, so it
+  works regardless of how a task's state changed.
 
 ```
 src/
@@ -152,38 +154,38 @@ Two seams, no Obsidian mocks:
 
 - **Unit (Vitest)** — the pure core. Fast and exhaustive:
 
-  ```bash
-  npm test
-  ```
+    ```bash
+    npm test
+    ```
 
 - **End-to-end (`wdio-obsidian-service`)** — the Obsidian adapter (change
   listener, command wiring, committed draw result, Notices) driven against a
-  real, sandboxed Obsidian. Build first: the service loads the bundled `main.js`,
-  not the TypeScript source.
+  real, sandboxed Obsidian. Build first: the service loads the bundled
+  `main.js`, not the TypeScript source.
 
-  ```bash
-  npm run build && npm run test:e2e
-  ```
+    ```bash
+    npm run build && npm run test:e2e
+    ```
 
-  By default the service downloads a pinned Obsidian into `.obsidian-cache`
-  (git-ignored, cached in CI). This is the supported path and what
-  `.github/workflows/test.yml` runs headlessly on Linux.
+    By default the service downloads a pinned Obsidian into `.obsidian-cache`
+    (git-ignored, cached in CI). This is the supported path and what
+    `.github/workflows/test.yml` runs headlessly on Linux.
 
-  <details>
-  <summary>Optional: run E2E against your installed Obsidian (fragile)</summary>
+      <details>
+      <summary>Optional: run E2E against your installed Obsidian (fragile)</summary>
 
-  ```bash
-  export OBSIDIAN_BINARY_PATH="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
-  export OBSIDIAN_INSTALLER_VERSION="latest"   # must match the installed app
-  npm run test:e2e
-  ```
+    ```bash
+    export OBSIDIAN_BINARY_PATH="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+    export OBSIDIAN_INSTALLER_VERSION="latest"   # must match the installed app
+    npm run test:e2e
+    ```
 
-  `OBSIDIAN_INSTALLER_VERSION` selects the ChromeDriver, which must match the
-  installed app's Electron/Chrome version. Obsidian auto-updates its app JS ahead
-  of the launcher's ChromeDriver database, so a freshly-updated install can have
-  no matching driver and the session dies at creation. If it fails, unset
-  `OBSIDIAN_BINARY_PATH` and use the download path.
-  </details>
+    `OBSIDIAN_INSTALLER_VERSION` selects the ChromeDriver, which must match the
+    installed app's Electron/Chrome version. Obsidian auto-updates its app JS
+    ahead of the launcher's ChromeDriver database, so a freshly-updated install
+    can have no matching driver and the session dies at creation. If it fails,
+    unset `OBSIDIAN_BINARY_PATH` and use the download path.
+      </details>
 
 ### Pull requests
 
@@ -204,10 +206,9 @@ Maintainer steps for cutting a release:
    attach `main.js`, `manifest.json`, and `styles.css` as binaries.
 5. For the first listing, submit a PR to
    [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases)
-   per the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
+   per the
+   [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
 
 ## License
 
-[0-BSD](LICENSE).
-</content>
-</invoke>
+[0-BSD](LICENSE). </content> </invoke>
