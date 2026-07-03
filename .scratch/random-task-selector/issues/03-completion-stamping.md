@@ -1,6 +1,6 @@
 # 03 — Completion stamping
 
-Status: ready-for-agent
+Status: in-progress
 
 ## Parent
 
