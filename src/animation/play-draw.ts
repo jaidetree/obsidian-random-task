@@ -54,12 +54,15 @@ export async function playDraw(
 
 	const aborted = (): boolean => rangeText(view, start, end) !== baseline;
 
-	// Spin: move the plain highlight across the candidates. The landing hop is
-	// handled below so its bounce is not cut short by the commit/clear.
-	for (const hop of hops) {
-		const line = draw.candidateLines[hop.candidateIndex]!;
-		view.dispatch({ effects: setDrawHighlight.of({ line, bounce: false }) });
-		await sleep(hop.delayMs);
+	// Spin: hop the highlight across the candidates, each with its own quick
+	// indent kick (`tick` alternates the class so same-line pulses re-fire). The
+	// landing is handled below so its bounce is not cut short by the commit/clear.
+	for (let i = 0; i < hops.length; i++) {
+		const line = draw.candidateLines[hops[i]!.candidateIndex]!;
+		view.dispatch({
+			effects: setDrawHighlight.of({ line, kind: 'hop', tick: i }),
+		});
+		await sleep(hops[i]!.delayMs);
 		if (aborted()) {
 			clear();
 			return 'aborted';
@@ -70,7 +73,7 @@ export async function playDraw(
 	// play out fully (see `.rts-draw-bounce` in styles.css) before writing, so it
 	// never ends abruptly. A last edit during the hold still aborts.
 	view.dispatch({
-		effects: setDrawHighlight.of({ line: draw.lineIndex, bounce: true }),
+		effects: setDrawHighlight.of({ line: draw.lineIndex, kind: 'land', tick: 0 }),
 	});
 	await sleep(LANDING_SETTLE_MS);
 	if (aborted()) {
