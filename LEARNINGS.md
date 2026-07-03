@@ -249,9 +249,9 @@
   went green in 1m22s under `xvfb` + `herbstluftwm`. The `.obsidian-cache` step
   logged a *miss then save* ("Cache not found … Cache saved with key
   obsidian-cache-Linux-<hash>") — so cache **save** is proven; the **restore**
-  half needs a second run reusing the same key (the key hashes only
-  `manifest.json`/`wdio.conf.mts`/`package-lock.json`, so any later push that
-  doesn't touch those hits it). The local `binaryPath` path was **not** shown to
+  half is proven by follow-up run 28685363133 (same key): "Cache hit for:
+  obsidian-cache-Linux-bfbcbc4…ccd", ~256 MB restored, E2E green — so save +
+  restore between runs are both confirmed. The local `binaryPath` path was **not** shown to
   pass (still machine-dependent on the installed app's Chrome vs the driver DB);
   per slice 07's either/or it was **demoted** in the README to an optional dev
   convenience with the download path as the supported default, documenting the

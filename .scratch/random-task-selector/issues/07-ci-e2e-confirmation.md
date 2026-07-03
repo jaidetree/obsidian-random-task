@@ -43,9 +43,10 @@ the two boxes honestly, plus any workflow fixups a real run surfaces.
       — Run 28684384731 (push to `main`) went green: E2E job 1m22s, full suite
       slices 01–06 under `xvfb`+`herbstluftwm`. Cache **save** proven (log:
       "Cache not found … Cache saved with key obsidian-cache-Linux-<hash>"). The
-      cache **restore** (hit) needs one more run reusing the same key — the key
-      hashes only `manifest.json`/`wdio.conf.mts`/`package-lock.json`, none of
-      which this slice touches, so pushing this commit demonstrates the hit.
+      cache **restore** (hit) is proven by the follow-up run 28685363133 (this
+      commit's push, unchanged key): log shows "Cache hit for:
+      obsidian-cache-Linux-bfbcbc4…ccd" (~256 MB restored), E2E green again.
+      Both halves (save + restore between runs) now confirmed.
 - [x] The workflow is adjusted as needed so the run is reliable (no flakiness in
       display/WM startup or Obsidian download).
       — Run was clean; no change needed. Only annotation is the harmless Node-20
