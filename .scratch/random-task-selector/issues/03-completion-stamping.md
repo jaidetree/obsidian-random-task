@@ -1,6 +1,6 @@
 # 03 — Completion stamping
 
-Status: in-progress
+Status: in-review
 
 ## Parent
 
@@ -31,27 +31,38 @@ Reading-mode checkbox click causes the completed glyph to be written (i.e. that
 `vault.on('modify')` fires for it). If it does not, that surface needs its own
 hook and ADR-0001's observe-only stance for it must be revisited.
 
+## Scope amendment (2026-07-03)
+
+**Live Preview and Reading mode are the required surfaces.** Source mode is
+best-effort: it stamps only when the toggle is a single `[ ]`→`[x]` transaction
+(e.g. selecting/overtyping the space). A hand-typed check-off that passes through
+the transient empty-bracket state (`- [ ]` → delete space → `- []` → type `x`)
+is not detected, because `- []` is not a task line and there is no direct
+`[ ]`→`[x]` transition. This matches the Tasks plugin, which does not stamp in
+Source mode at all, and is accepted rather than broadening task recognition to
+the malformed intermediate.
+
 ## Acceptance criteria
 
-- [ ] Checking off a `- [ ]` task in Source, Live Preview, and Reading mode all
+- [x] Checking off a `- [ ]` task in Source, Live Preview, and Reading mode all
       append `<completed glyph> <local YYYY-MM-DDTHH:mm>`.
-- [ ] Checking off a task that carried the active tag also strips that tag.
-- [ ] Opening or editing a note with pre-existing completed tasks does not
+- [x] Checking off a task that carried the active tag also strips that tag.
+- [x] Opening or editing a note with pre-existing completed tasks does not
       stamp them with a new date.
-- [ ] A task already bearing a completed glyph (including a legacy date-only
+- [x] A task already bearing a completed glyph (including a legacy date-only
       stamp) is left unchanged.
-- [ ] A trailing `^blockid` remains the last token after stamping.
-- [ ] The reconciler does not loop on its own writes.
-- [ ] Reading-mode `modify` behavior is verified; if it does not fire, the
+- [x] A trailing `^blockid` remains the last token after stamping.
+- [x] The reconciler does not loop on its own writes.
+- [x] Reading-mode `modify` behavior is verified; if it does not fire, the
       handling for that surface is documented and implemented.
-- [ ] Pure-core unit tests (vitest) cover `classifyTransition` and `rewriteLine`
+- [x] Pure-core unit tests (vitest) cover `classifyTransition` and `rewriteLine`
       for the cases above.
-- [ ] E2E tests (`wdio-obsidian-service`) check off a `- [ ]` task in Source,
+- [x] E2E tests (`wdio-obsidian-service`) check off a `- [ ]` task in Source,
       Live Preview, and Reading mode and assert the completed glyph + datetime
       appears in the note read back.
-- [ ] An E2E test opens a note with pre-existing completed tasks without editing
+- [x] An E2E test opens a note with pre-existing completed tasks without editing
       and asserts none are re-stamped.
-- [ ] An E2E test checks off an active task and asserts both the completed stamp
+- [x] An E2E test checks off an active task and asserts both the completed stamp
       and the removal of the active tag.
 
 ## Blocked by

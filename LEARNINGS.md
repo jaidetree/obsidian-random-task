@@ -2,6 +2,19 @@
 
 ## Patterns That Work
 
+- [2026-07-03] E2E specs must **force default settings in a `before` hook**
+  (`Object.assign(plugin.settings, DEFAULT_SETTINGS); await saveSettings()`),
+  not just restore in `after`. Because `data.json` survives between `wdio` runs,
+  a prior spec's saved glyphs/tag leak in: slice-03 stamping tests first failed
+  because the vault carried `settings.e2e`'s `🏁`/`🎯`/`#doing`, so the plugin
+  correctly stamped `🏁` while assertions looked for the default `✅`.
+- [2026-07-03] Driving a specific edit surface in E2E: switch a `MarkdownView`
+  with `await view.setState({ ...view.getState(), mode, source }, {history:false})`
+  — `mode:'preview'` = Reading; `mode:'source', source:false` = Live Preview;
+  `mode:'source', source:true` = raw Source. Live Preview only renders the
+  `input.task-list-item-checkbox` **widget on a line the cursor is not on**, so
+  put the task off line 0 and `editor.setCursor({line:0,ch:0})` before clicking,
+  or the click target never exists.
 - [2026-07-02] Pure-core unit seam needs only a minimal `vitest.config.ts`
   (`environment: 'node'`, `include: ['src/**/*.test.ts']`) — no Obsidian mocks,
   unlike the sibling kanban plugin's storybook/preact-heavy config. E2E specs
@@ -25,12 +38,31 @@
 
 ## Mistakes to Avoid
 
+- [2026-07-03] In a CM6 `ViewPlugin.update`, `update.changes` maps **old→new**
+  and its `length` is the *old* doc length. Mapping a *new*-doc position (e.g. a
+  changed line's `from` in `update.state.doc`) with `update.changes.mapPos`
+  throws `Position N is out of range for changeset of length N-1` as soon as an
+  edit grows the doc — and CodeMirror **swallows the exception by disabling the
+  plugin**, so the failure is silent (stamping just stops). Invert first:
+  `update.changes.invertedDesc.mapPos(posNew, -1)`. Test the crash with an edit
+  that *grows* the doc; an equal-length replace (`[ ]`→`[x]`) never triggers it.
+
 - [2026-07-02] Don't leave `manifest.json` `minAppVersion` at the template
   `1.0.0`. With wdio-obsidian-service, `installerVersion: 'earliest'` resolves to
   `minAppVersion`, so `1.0.0` means an ancient/undownloadable installer — breaks
   the CI download path and produces a ChromeDriver far older than any real app.
 
 ## Domain Knowledge
+
+- [2026-07-03] Completion stamping targets **Live Preview + Reading mode**;
+  Source mode is best-effort. A hand-typed check-off in Source passes through the
+  transient state `- []` (delete the space, then type `x`), which isn't a task
+  line, so there's no direct `[ ]`→`[x]` transition to detect — nothing gets
+  stamped. Accepted as-is (the Tasks plugin also doesn't stamp in Source mode);
+  do NOT broaden `TASK_RE` to accept empty brackets, as that would change
+  task/candidate recognition everywhere and risk over-firing (e.g. a
+  freshly-typed `- [x]` self-stamping). Source still works for a single-
+  transaction toggle (overtyping the space).
 
 - [2026-07-02] wdio-obsidian-service: `installerVersion` (NOT `binaryPath`)
   selects the ChromeDriver; `binaryPath` only overrides which Electron binary is
@@ -65,11 +97,32 @@
   `manifest.json` on every boot but preserves an existing dest `data.json`
   (it only overwrites when the *source* plugin dir ships its own data.json).
 
+- [2026-07-03] Observe-and-reconcile (ADR-0001) needs a **dual write path**, and
+  the reason is the *write* side, not detection: `vault.modify` on a file open in
+  an editor races the editor buffer. So editor surfaces (Source/Live Preview) are
+  detected via a CM6 `ViewPlugin` and written back **through the editor** (a
+  follow-up `view.dispatch`), while Reading mode is detected via
+  `vault.on('modify')` + per-file snapshot diff and written via `vault.modify`.
+- [2026-07-03] CM6 forbids dispatching a transaction from inside a
+  `ViewPlugin.update()` ("calls to EditorView updates are not allowed while an
+  update is in progress"). Defer the follow-up write with `queueMicrotask`, and
+  wrap it in a shared `writing` guard so the plugin's own edit isn't reconciled.
+- [2026-07-03] Snapshot back-stamp guard: on `vault.on('modify')`, a file with
+  **no prior snapshot is recorded and left alone** (never diff against nothing),
+  and snapshots are seeded on `file-open`/`active-leaf-change`. Without seeding,
+  the first real check-off's `modify` would itself be the seeding event and get
+  swallowed; without the guard, opening/externally touching an old note would
+  back-stamp every historical `[x]`. Use `MarkdownView.getMode() === 'source'`
+  across `iterateAllLeaves` to tell "open in an editor" (skip — editor path owns
+  it) from Reading mode (handle via the snapshot path).
+
 ## Open Questions
 
-- [2026-07-02] Does a Reading-mode checkbox click fire `vault.on('modify')`?
-  (PRD "Open verification" — gates ADR-0001's observe-only stance.) To be
-  resolved by an E2E test in a later slice.
+- [2026-07-02] [RESOLVED 2026-07-03] Does a Reading-mode checkbox click fire
+  `vault.on('modify')`? **Yes.** The slice-03 E2E clicks a rendered
+  `input.task-list-item-checkbox` in Reading mode and the completed glyph lands
+  in the note read back from disk — so ADR-0001's observe-only stance holds for
+  that surface and no per-surface (markdown post-processor) hook is needed.
 - [2026-07-02] Slice 01 E2E smoke spec passes green via the **download path**
   (`OBSIDIAN_BINARY_PATH` unset → service fetches a self-consistent installer +
   ChromeDriver + app). Still unproven: CI headless run, and the local
