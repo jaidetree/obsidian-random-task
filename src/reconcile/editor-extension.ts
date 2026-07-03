@@ -91,14 +91,17 @@ export function stampingExtension(
 }
 
 /**
- * The pre-change text of the line that now begins at `posB`, mapped back into
- * the old document. Returns null if the position doesn't map cleanly (e.g. the
- * line is newly inserted), so such lines are skipped rather than misclassified.
+ * The pre-change text of the line that now begins at `posB` (a position in the
+ * *changed* document), mapped back into the old document. `update.changes` maps
+ * old→new, so we invert it to map the new position back — mapping `posB` with
+ * the forward changeset throws once the doc grows (posB exceeds the old length).
+ * Returns null if the position doesn't map cleanly (e.g. a newly inserted line),
+ * so such lines are skipped rather than misclassified.
  */
 function prevLineText(update: ViewUpdate, posB: number): string | null {
-	const posA = update.changes.mapPos(posB, -1, MapMode.TrackDel);
+	const posA = update.changes.invertedDesc.mapPos(posB, -1, MapMode.TrackDel);
 	if (posA === null) return null;
 	const oldDoc = update.startState.doc;
-	if (posA > oldDoc.length) return null;
+	if (posA < 0 || posA > oldDoc.length) return null;
 	return oldDoc.lineAt(posA).text;
 }

@@ -67,6 +67,19 @@ const moveCursorTo = (line: number) =>
 		view?.editor.setCursor({ line: ln, ch: 0 });
 	}, line);
 
+// Insert text at the very end of the doc, growing it past its old length. This
+// exercises the CM6 new→old position mapping: a naive forward `mapPos` throws
+// "position out of range" once the doc grows, which CodeMirror swallows by
+// disabling the plugin — silently killing stamping.
+const appendAtEnd = (text: string) =>
+	browser.executeObsidian(({ app, obsidian }, insert) => {
+		const view = app.workspace.getActiveViewOfType(obsidian.MarkdownView);
+		if (!view) throw new Error('no active markdown view');
+		const ed = view.editor;
+		const last = ed.lineCount() - 1;
+		ed.replaceRange(insert, { line: last, ch: ed.getLine(last).length });
+	}, text);
+
 const clickCheckbox = async (container: string) => {
 	const box = await $(`${container} input.task-list-item-checkbox`);
 	await box.waitForExist({ timeout: 5000 });
@@ -117,6 +130,22 @@ describe('Random Task Selector — completion stamping', function () {
 		});
 		const value = await editorValue();
 		expect(value).toMatch(/- \[x\] source task ✅ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+		expect(countGlyph(value, '✅')).toBe(1);
+	});
+
+	it('keeps stamping after an edit that grows the document (position mapping)', async function () {
+		await openWith('- [ ] grow task\n', 'source');
+		// Grow the doc so a changed line starts beyond the old length; a broken
+		// forward mapPos crashes here and CM6 disables the reconciler.
+		await appendAtEnd('\n\nappended tail line');
+		await toggleLineInEditor('grow task');
+		await browser.waitUntil(async () => STAMP.test(await editorValue()), {
+			timeout: 5000,
+			timeoutMsg:
+				'no stamp after a doc-growing edit — the CM6 plugin likely crashed on position mapping',
+		});
+		const value = await editorValue();
+		expect(value).toMatch(/- \[x\] grow task ✅ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
 		expect(countGlyph(value, '✅')).toBe(1);
 	});
 
