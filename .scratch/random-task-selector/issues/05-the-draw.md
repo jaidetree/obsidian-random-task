@@ -1,6 +1,6 @@
 # 05 — The Draw (no animation yet)
 
-Status: ready-for-agent
+Status: in-review
 
 ## Parent
 
@@ -33,18 +33,18 @@ stable command id so E2E can invoke it via
 
 ## Acceptance criteria
 
-- [ ] Running the command on a checklist with candidates marks exactly one random
+- [x] Running the command on a checklist with candidates marks exactly one random
       unchecked task active (active tag + start glyph + datetime), before any
       trailing `^blockid`.
-- [ ] Selection considers only the checklist at the cursor and only its unchecked,
+- [x] Selection considers only the checklist at the cursor and only its unchecked,
       untagged candidates.
-- [ ] Winner distribution is uniform over candidates (offset in `[0, N)`, no
+- [x] Winner distribution is uniform over candidates (offset in `[0, N)`, no
       low-index bias); the single-candidate case selects that candidate.
-- [ ] The command refuses with a Notice when the cursor is not on a task line.
-- [ ] The command refuses with a Notice when the checklist already has an active
+- [x] The command refuses with a Notice when the cursor is not on a task line.
+- [x] The command refuses with a Notice when the checklist already has an active
       task.
-- [ ] The command refuses with a Notice when there are no candidates.
-- [ ] Pure-core unit tests cover boundary detection, candidate filtering, uniform
+- [x] The command refuses with a Notice when there are no candidates.
+- [x] Pure-core unit tests cover boundary detection, candidate filtering, uniform
       selection, and the line rewrite (including block-ref preservation).
 - [ ] An E2E test (`wdio-obsidian-service`) places the cursor in a checklist,
       runs the command, and asserts exactly one candidate in the note read back

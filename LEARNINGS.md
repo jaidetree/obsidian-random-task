@@ -36,6 +36,21 @@
   `saveSettings()`) instead of importing the concrete plugin class — avoids the
   circular import and keeps the adapter thin (ADR-0002).
 
+- [2026-07-03] Uniform draw (slice-05): inject an **offset picker**
+  `pickOffset(n) => number` into the pure orchestrator (`planDraw`), not a raw
+  offset — the adapter can't know the candidate count `N` until the core filters
+  candidates, and `Math.floor(Math.random()*<wider range>) % N` biases toward low
+  indices. `pickOffset(N)` draws in `[0, N)`; `selectWinner` reduces mod `N` so a
+  full-loop hop total (`fullLoops*N+k`) and the single-candidate case both land.
+  Prove uniformity as a **bijection** — assert `selectWinner(N, 0..N-1)` maps onto
+  `{0..N-1}` with no collisions — never by sampling the RNG (flaky, wrong seam).
+- [2026-07-03] Put refusal precedence in the **pure core**, not the adapter:
+  `planDraw` returns `{ok:false, reason}` in fixed order (not-a-task-line →
+  already-active → no-candidates), so precedence (e.g. a lone active task reports
+  "already-active", never "no-candidates") is unit-tested, not gated behind slow
+  E2E. The thin adapter only maps `reason` → `Notice` and applies the one edit.
+  Mirrors `reconcile-content.ts`'s edit-description pattern.
+
 ## Mistakes to Avoid
 
 - [2026-07-03] An E2E `browser.waitUntil` must gate on the **reconciler's
@@ -135,6 +150,23 @@
   was one branch in the pure core (ADR-0002 paying off). When adding a new
   transition, extend `classifyTransition` and its unit tests; the adapters carry
   it for free.
+
+- [2026-07-03] Candidacy keys on the **active tag alone**, never the start glyph
+  (slice-05 `candidatesIn`). A re-rolled task (`#in-progress` manually removed but
+  🚀 kept) is a Candidate again and eligible to win — the glyph is recorded data,
+  the tag is the sole Active marker (CONTEXT "Reactivation"). Symmetrically,
+  `hasActiveTask` counts a line as Active only when **unchecked** *and* tagged: a
+  checked line still bearing the tag is Completed, not Active, so it never blocks
+  a draw. The draw's winner write (`rewriteLine {activeTag:'add', start:{at}}`)
+  is inert to the reconciler — no `[ ]`→`[x]` transition — so it needs no write
+  guard, unlike the completion-stamping path.
+- [2026-07-03] E2E invokes a command by its fully-qualified id via
+  `browser.executeObsidianCommand("<plugin-id>:<command-id>")` (confirmed in
+  `wdio-obsidian-service`'s `index.d.ts`; returns `Promise<void>`). The command
+  must be an `editorCallback` command with a **stable id** so E2E can drive it;
+  place the cursor first with `editor.setCursor({line,ch:0})` via
+  `executeObsidian`, then run the command, then assert on `editor.getValue()`
+  (buffer, for editor-surface writes) or `obsidianPage.read` (disk).
 
 ## Open Questions
 
