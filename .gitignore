@@ -33,3 +33,4 @@ test/vaults/*/.obsidian/workspace.json
 
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
+.claude/settings.local.json
