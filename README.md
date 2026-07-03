@@ -54,7 +54,7 @@ search for "Random Task Selector", install, and enable.
    ```
 
 2. Put your cursor on any line of the checklist.
-3. Run **Draw a random task from this checklist** from the command palette
+3. Run **Pick for me** from the command palette
    (⌘/Ctrl-P). Optionally bind it to a hotkey.
 4. The highlight spins and lands on the winner, which is marked active:
 

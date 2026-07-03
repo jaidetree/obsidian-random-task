@@ -38,7 +38,7 @@ export function registerDrawCommand(plugin: DrawHost): void {
 	plugin.registerEditorExtension(drawHighlightExtension());
 	plugin.addCommand({
 		id: COMMAND_ID,
-		name: 'Draw a random task from this checklist',
+		name: 'Pick for me',
 		editorCallback: (editor) => {
 			const lines = editor.getValue().split('\n');
 			const cursorLine = editor.getCursor().line;
