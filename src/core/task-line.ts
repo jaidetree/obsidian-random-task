@@ -64,6 +64,19 @@ export function hasCompletedGlyph(
 	return parsed ? extractGlyph(parsed.body, settings.completedGlyph).present : false;
 }
 
+/**
+ * Whether a task line carries the Active tag — the sole definitive marker of the
+ * Active state (the start glyph alone does not make a task Active). A non-task
+ * line, or a task without the tag, is not Active.
+ */
+export function hasActiveTag(
+	line: string,
+	settings: RandomTaskSettings,
+): boolean {
+	const parsed = parseTaskLine(line);
+	return parsed ? extractTag(parsed.body, settings.activeTag).present : false;
+}
+
 export interface RewriteOps {
 	/** Add or strip the active tag. Omit to preserve current state. */
 	activeTag?: 'add' | 'strip';

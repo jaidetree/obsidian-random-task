@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+	hasActiveTag,
 	hasCompletedGlyph,
 	parseTaskLine,
 	rewriteLine,
@@ -52,6 +53,28 @@ describe('hasCompletedGlyph', () => {
 	});
 });
 
+describe('hasActiveTag', () => {
+	it('is true only when the active tag is present on a task line', () => {
+		expect(hasActiveTag('- [ ] task #in-progress', settings)).toBe(true);
+		expect(hasActiveTag('- [ ] task #in-progress 🚀 2026-07-03T08:00', settings)).toBe(
+			true,
+		);
+	});
+
+	it('is false for a task carrying only the start glyph (glyph is not the marker)', () => {
+		expect(hasActiveTag('- [ ] task 🚀 2026-07-03T08:00', settings)).toBe(false);
+	});
+
+	it('does not match the tag as a substring of a longer tag', () => {
+		expect(hasActiveTag('- [ ] task #in-progressing', settings)).toBe(false);
+	});
+
+	it('is false without the tag and for non-tasks', () => {
+		expect(hasActiveTag('- [ ] plain task', settings)).toBe(false);
+		expect(hasActiveTag('prose #in-progress', settings)).toBe(false);
+	});
+});
+
 describe('rewriteLine', () => {
 	it('returns non-task lines unchanged', () => {
 		expect(rewriteLine('prose', { completed: { at: 'x' } }, settings)).toBe(
@@ -96,6 +119,16 @@ describe('rewriteLine', () => {
 		expect(
 			rewriteLine('- [x] task ^blk', { completed: { at: '2026-07-03T09:00' } }, settings),
 		).toBe('- [x] task ✅ 2026-07-03T09:00 ^blk');
+	});
+
+	it('writes the draw op (active tag + start glyph) before a trailing block ref', () => {
+		expect(
+			rewriteLine(
+				'- [ ] task ^blk',
+				{ activeTag: 'add', start: { at: '2026-07-03T08:00' } },
+				settings,
+			),
+		).toBe('- [ ] task #in-progress 🚀 2026-07-03T08:00 ^blk');
 	});
 
 	it('preserves existing description and tags', () => {

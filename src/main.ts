@@ -3,13 +3,14 @@ import { DEFAULT_SETTINGS, withDefaults } from './settings';
 import type { RandomTaskSettings } from './settings';
 import { RandomTaskSettingTab } from './settings-tab';
 import { registerReconciler } from './reconcile';
+import { registerDrawCommand } from './commands/draw';
 
 /**
  * Random Task Selector — plugin entry point.
  *
  * Lifecycle only. Feature logic is delegated to focused modules: settings
- * persistence + tab here, and the observe-and-reconcile completion-stamping
- * plumbing in `reconcile/`. The Draw arrives in a later slice.
+ * persistence + tab here, the observe-and-reconcile completion-stamping
+ * plumbing in `reconcile/`, and the Draw command in `commands/`.
  */
 export default class RandomTaskSelectorPlugin extends Plugin {
 	settings: RandomTaskSettings = { ...DEFAULT_SETTINGS };
@@ -20,6 +21,7 @@ export default class RandomTaskSelectorPlugin extends Plugin {
 		);
 		this.addSettingTab(new RandomTaskSettingTab(this.app, this));
 		registerReconciler(this);
+		registerDrawCommand(this);
 	}
 
 	onunload() {}
