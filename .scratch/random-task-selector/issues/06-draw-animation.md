@@ -1,6 +1,6 @@
 # 06 — Draw selection animation
 
-Status: ready-for-agent
+Status: in-review
 
 ## Parent
 
@@ -25,21 +25,21 @@ user who dislikes the result removes the tag and runs the command again.
 
 ## Acceptance criteria
 
-- [ ] The draw plays an in-editor highlight that hops over candidates only and
+- [x] The draw plays an in-editor highlight that hops over candidates only and
       decelerates onto the winner over ~2s.
-- [ ] A single-candidate checklist shows a brief flourish rather than a full spin.
-- [ ] The winner is the uniformly-selected candidate; the document is written once,
+- [x] A single-candidate checklist shows a brief flourish rather than a full spin.
+- [x] The winner is the uniformly-selected candidate; the document is written once,
       on landing.
-- [ ] Editing the target checklist mid-spin aborts the draw with no selection.
-- [ ] The abort is not triggered by the reconciler's own writes or by check-offs
+- [x] Editing the target checklist mid-spin aborts the draw with no selection.
+- [x] The abort is not triggered by the reconciler's own writes or by check-offs
       elsewhere in the note.
-- [ ] Pure selection logic (offset → winner, hop count) remains unit-tested at the
+- [x] Pure selection logic (offset → winner, hop count) remains unit-tested at the
       core seam.
-- [ ] An E2E test (`wdio-obsidian-service`) runs the command and, after the
+- [x] An E2E test (`wdio-obsidian-service`) runs the command and, after the
       animation completes, asserts exactly one candidate is tagged + stamped in
       the note read back (asserting the committed end state, not animation
       frames).
-- [ ] An E2E test edits the target checklist during the spin and asserts no task
+- [x] An E2E test edits the target checklist during the spin and asserts no task
       is marked active (abort). Animation timing/feel is verified manually.
 
 ## Blocked by

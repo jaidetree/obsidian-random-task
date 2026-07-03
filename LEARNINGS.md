@@ -2,6 +2,28 @@
 
 ## Patterns That Work
 
+- [2026-07-03] Verifying an E2E test is *discriminating* (that it fails when the
+  logic under test is broken) requires a **rebuild** — wdio loads the bundled
+  `main.js`, not the TS source. Sequence: patch source → `npm run build` → run
+  the spec. Skipping the build silently runs the *old* bundle, so the test
+  passes vacuously and you conclude (wrongly) it isn't testing anything. Hit this
+  proving the slice-06 abort E2E: first "disable + rerun" passed because the
+  build was stale; after `npm run build` it failed as expected. Always rebuild
+  between the sabotage and the rerun.
+- [2026-07-03] Drive the Draw's CM6 line-decoration animation from the command's
+  `editorCallback` by reaching the `EditorView` via the untyped
+  `(editor as unknown as { cm?: EditorView }).cm`. Lints clean under the typed
+  `obsidianmd` eslint with the double cast; `.cm` is present on Obsidian's
+  `Editor` at runtime but absent from the public typings. Fall back to an instant
+  `editor.setLine` when `cm` is null (non-CM6 surface). Use `window.setTimeout`
+  (not bare `setTimeout`) in the driver — `obsidianmd/prefer-window-timers`.
+- [2026-07-03] A **range-scoped text snapshot** is enough to abort the Draw spin
+  correctly without plumbing the reconcile `WriteGuard` into the command or a
+  module-level session singleton: capture the target Checklist's text up front,
+  re-read those same lines between hops, abort on any diff. It ignores the
+  reconciler's own writes and check-offs *elsewhere* for free — neither touches
+  the snapshot lines. The only in-range reconciler write during a spin *follows*
+  a user in-range check-off, which is exactly the edit that should abort anyway.
 - [2026-07-03] E2E specs must **force default settings in a `before` hook**
   (`Object.assign(plugin.settings, DEFAULT_SETTINGS); await saveSettings()`),
   not just restore in `after`. Because `data.json` survives between `wdio` runs,
