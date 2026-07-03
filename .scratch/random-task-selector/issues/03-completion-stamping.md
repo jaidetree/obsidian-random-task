@@ -1,6 +1,6 @@
 # 03 — Completion stamping
 
-Status: in-review
+Status: done
 
 ## Parent
 
@@ -23,8 +23,8 @@ inserts before any trailing `^blockid`. A re-entrancy guard prevents the
 reconciler from reacting to its own writes.
 
 Tested at both seams (per the PRD): the pure core (`classifyTransition`,
-`rewriteLine`) with vitest, and end-to-end with `wdio-obsidian-service` driving a
-real Obsidian instance across the three edit surfaces.
+`rewriteLine`) with vitest, and end-to-end with `wdio-obsidian-service` driving
+a real Obsidian instance across the three edit surfaces.
 
 Resolve the open verification first, now as an E2E test: confirm that a
 Reading-mode checkbox click causes the completed glyph to be written (i.e. that
@@ -35,20 +35,20 @@ hook and ADR-0001's observe-only stance for it must be revisited.
 
 **Live Preview and Reading mode are the required surfaces.** Source mode is
 best-effort: it stamps only when the toggle is a single `[ ]`→`[x]` transaction
-(e.g. selecting/overtyping the space). A hand-typed check-off that passes through
-the transient empty-bracket state (`- [ ]` → delete space → `- []` → type `x`)
-is not detected, because `- []` is not a task line and there is no direct
-`[ ]`→`[x]` transition. This matches the Tasks plugin, which does not stamp in
-Source mode at all, and is accepted rather than broadening task recognition to
-the malformed intermediate.
+(e.g. selecting/overtyping the space). A hand-typed check-off that passes
+through the transient empty-bracket state (`- [ ]` → delete space → `- []` →
+type `x`) is not detected, because `- []` is not a task line and there is no
+direct `[ ]`→`[x]` transition. This matches the Tasks plugin, which does not
+stamp in Source mode at all, and is accepted rather than broadening task
+recognition to the malformed intermediate.
 
 ## Acceptance criteria
 
 - [x] Checking off a `- [ ]` task in Source, Live Preview, and Reading mode all
       append `<completed glyph> <local YYYY-MM-DDTHH:mm>`.
 - [x] Checking off a task that carried the active tag also strips that tag.
-- [x] Opening or editing a note with pre-existing completed tasks does not
-      stamp them with a new date.
+- [x] Opening or editing a note with pre-existing completed tasks does not stamp
+      them with a new date.
 - [x] A task already bearing a completed glyph (including a legacy date-only
       stamp) is left unchanged.
 - [x] A trailing `^blockid` remains the last token after stamping.
