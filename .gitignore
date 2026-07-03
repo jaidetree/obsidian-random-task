@@ -21,6 +21,13 @@ data.json
 # wdio-obsidian-service downloads Obsidian versions here
 .obsidian-cache
 
+# wdio-obsidian-service writes runtime state into the vault fixtures on each run;
+# only the intentional fixture files (e.g. community-plugins.json) are tracked.
+test/vaults/*/.obsidian/app.json
+test/vaults/*/.obsidian/appearance.json
+test/vaults/*/.obsidian/core-plugins.json
+test/vaults/*/.obsidian/workspace.json
+
 # Obsidian Insiders credentials for beta downloads (see wdio.conf.mts)
 .env
 
